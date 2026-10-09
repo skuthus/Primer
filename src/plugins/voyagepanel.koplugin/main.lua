@@ -19,6 +19,7 @@ local QuickPanel = require("quickpanel")
 local Toolbar = require("toolbar")
 local AaPanel = require("aapanel")
 local Dialog = require("dialog")
+local PageFlip = require("pageflip")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -53,6 +54,24 @@ local function hookSwipe(MenuClass)
 end
 hookSwipe(require("apps/reader/modules/readermenu"))
 hookSwipe(require("apps/filemanager/filemanagermenu"))
+
+-- Swiping up from the bottom while reading opens the Kindle-style page flip instead of
+-- KOReader's settings bar. Like the quick panel, it opens once the swipe is finished.
+do
+    local ReaderConfig = require("apps/reader/modules/readerconfig")
+    if not ReaderConfig._voyage_swipe_hooked then
+        ReaderConfig._voyage_swipe_hooked = true
+        local orig = ReaderConfig.onSwipeShowConfigMenu
+        function ReaderConfig:onSwipeShowConfigMenu(ges)
+            local plugin = self.ui and self.ui.voyagepanel
+            if plugin and ges.direction == "north" then
+                if ges.ges == "swipe" then plugin:showPageFlip() end
+                return true
+            end
+            return orig(self, ges)
+        end
+    end
+end
 
 -- Tapping the top while reading opens the Kindle-style toolbar instead of KOReader's menus.
 do
@@ -238,6 +257,19 @@ function VoyagePanel:showToolbar()
     end
 end
 
+function VoyagePanel:showPageFlip()
+    if self.pageflip or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.pageflip = PageFlip:new{ plugin = self }
+        UIManager:show(self.pageflip)
+    end)
+    if not ok then
+        logger.err("VoyagePageFlip: failed to open:", err)
+        self.pageflip = nil
+        UIManager:show(InfoMessage:new{ text = "Page flip error:\n" .. tostring(err) })
+    end
+end
+
 -- Aa: the Kindle-style Themes / Font / Layout / More panel.
 function VoyagePanel:showTextSettings()
     if self.aapanel then return end
@@ -386,6 +418,7 @@ function VoyagePanel:onCloseWidget()
     if self.library then UIManager:close(self.library) end
     if self.toolbar then UIManager:close(self.toolbar) end
     if self.aapanel then UIManager:close(self.aapanel) end
+    if self.pageflip then UIManager:close(self.pageflip) end
 end
 
 function VoyagePanel:showPanel()

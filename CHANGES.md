@@ -32,6 +32,13 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
 
+### Page flip
+- [x] **Kindle-style page flip on swipe up from the bottom** (replaces KOReader's settings bar swipe). (Installed 2026-10-09 as `voyagepanel.koplugin/pageflip.lua`; confirmed by user.) Laid out from a photo of a Kindle's page flip (`design/reference/kindle-pageflip-photo.webp`).
+  - Status line with ⌄ chevron (closes), toolbar: ← Library, Aa, Contents, Page flip, Bookmark, Search, ⋮; book title.
+  - Current page as a large thumbnail (KOReader's thumbnail renderer), neighbours peeking in from both sides. Tap a side page or swipe to move; tap the centre page to go there.
+  - "Back to page N" when moved away; chapter title with previous/next chapter jumps; grid opens the Page browser; scrubber with "Page N" over the knob and a dot where you were.
+  - Nothing changes in the book until you tap a page.
+
 ### Library
 - [~] **Kindle 2-style library as home.** (Installed 2026-10-09 in `voyagepanel.koplugin/library.lua`, awaiting test. Skips Kindle clutter: My Clippings, crash reports, Amazon dictionaries. KFX store books are not listed: KOReader cannot open them.) Replaces KOReader's file browser whenever it would show.
   - Flat list of every book under `documents/` (Author folders ignored). Titles/authors from Calibre's `metadata.calibre`, falling back to the `Title - Author` file name.
