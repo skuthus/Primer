@@ -20,7 +20,7 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Close: chevron, swipe up, tap below the panel, or a page-turn button.
 
 ### Reading toolbar
-- [~] **Kindle-style toolbar on top tap.** (Installed 2026-10-09 as `voyagepanel.koplugin/toolbar.lua`, awaiting test.) Laid out from a screenshot of the Voyage's own reader. Replaces KOReader's top/bottom menus when tapping the top while reading.
+- [x] **Kindle-style toolbar on top tap.** (Installed 2026-10-09 as `voyagepanel.koplugin/toolbar.lua`; confirmed working by user.) Laid out from a screenshot of the Voyage's own reader. Replaces KOReader's top/bottom menus when tapping the top while reading.
   - Status line: book title; airplane (when wireless is off), battery %, drawn battery, time.
   - Row 1: home (library), back (previous location, else library), settings (KOReader's full menu); Search (in-book search); ⋮ (Notes, Book description, Reading statistics, Rotate). Goodreads/Store slots dropped.
   - Row 2: Aa, Go To (Contents, Notes, Page…, Beginning), bookmark ribbon (filled when the page is bookmarked; tap toggles).
