@@ -18,6 +18,7 @@ local Library = require("library")
 local QuickPanel = require("quickpanel")
 local Toolbar = require("toolbar")
 local AaPanel = require("aapanel")
+local Dialog = require("dialog")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -249,16 +250,16 @@ end
 
 function VoyagePanel:offerUsbMode()
     if self.usb_dialog then return end
-    local ConfirmBox = require("ui/widget/confirmbox")
-    self.usb_dialog = ConfirmBox:new{
-        text = _("Connect to your computer?\n\nKOReader will close so your Kindle can be used as a USB drive, and comes back when you eject it."),
-        ok_text = _("Connect"),
-        cancel_text = _("Not now"),
-        ok_callback = function()
-            self.usb_dialog = nil
-            self:enterUsbMode()
-        end,
-        cancel_callback = function() self.usb_dialog = nil end,
+    self.usb_dialog = Dialog:new{
+        title = _("Connect to Computer"),
+        text = _("Use your Kindle as a USB drive? KOReader will close while it's connected and come back when you eject it."),
+        buttons = {
+            { text = _("Not Now"), callback = function() self.usb_dialog = nil end },
+            { text = _("Connect"), bold = true, callback = function()
+                self.usb_dialog = nil
+                self:enterUsbMode()
+            end },
+        },
     }
     UIManager:show(self.usb_dialog)
 end
@@ -272,7 +273,14 @@ function VoyagePanel:enterUsbMode()
     end
     -- Detach so it outlives KOReader (fall back to plain sh if this busybox lacks setsid).
     os.execute(string.format("(command -v setsid >/dev/null && setsid sh %s || sh %s) </dev/null >/dev/null 2>&1 &", dst, dst))
-    self.ui.menu:exitOrRestart()
+    -- KOReader takes a few seconds to close and hand over; say what's happening meanwhile.
+    UIManager:show(InfoMessage:new{ text = _("Switching to USB drive mode…"), dismissable = false })
+    UIManager:forceRePaint()
+    -- KOReader only exits on its own once no windows are left, and this message is one,
+    -- so quit explicitly after the book/library has closed and saved.
+    UIManager:nextTick(function()
+        self.ui.menu:exitOrRestart(function() UIManager:quit() end)
+    end)
 end
 
 function VoyagePanel:showLibrary()
