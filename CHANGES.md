@@ -47,6 +47,7 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
 - [x] **USB handoff.** (Installed 2026-10-09; confirmed by user, KOReader relaunches after eject.) KOReader lives on the drive the Kindle exports, so it can't stay running while mounted. Plugging into a computer (detected via `fsl-usb2-udc/gadget/connected`, which a wall charger leaves at 0) shows "Connect to your computer?"; Connect exits KOReader and starts `tools/usb-handoff.sh` from /tmp, which waits for the gadget LUN (`gadget-lun0/file`) to be lent and returned, then relaunches KOReader once its files are reachable. Log copied to `/mnt/us/voyage-usb-handoff.log`.
 
 ## Done
+- [x] Start with the last book (KOReader `start_with = "last"`), on boot and after the USB handoff; confirmed 2026-10-09.
 - [x] Library reorganized 2026-10-09: author folders removed (backup in `backup/author-folders-2026-10-09`), 197 Calibre EPUBs copied flat to `documents/` as `Title - Author.epub` (full titles from Calibre's metadata.opf). KFX store books left untouched.
 - [x] Reading defaults captured: Bookerly 22, line spacing 115%, side margins 30, top 30, bottom 12, word spacing 95/75, best kerning (`src/defaults/reading.lua`)
 - [x] KOReader v2026.07.1 (kindlepw2 build), 2026-10-09
