@@ -83,6 +83,51 @@ do
     end
 end
 
+-- USB: KOReader lives on the drive the Kindle lends to a computer, so it can't stay running
+-- while mounted. When a computer is plugged in, offer to step aside; a small script brings
+-- KOReader back once the drive is ejected (tools/usb-handoff.sh).
+local USB_GADGET = "/sys/devices/platform/fsl-usb2-udc/gadget/connected"
+local PLUGIN_DIR = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$")
+
+local function computerConnected()
+    local f = io.open(USB_GADGET, "r")
+    if not f then return false end
+    local v = f:read("*l")
+    f:close()
+    return v == "1"
+end
+
+local function activePlugin()
+    local ReaderUI = require("apps/reader/readerui")
+    local FileManager = require("apps/filemanager/filemanager")
+    local ui = ReaderUI.instance or FileManager.instance
+    return ui and ui.voyagepanel
+end
+
+do
+    if not UIManager._voyage_usb_hooked and Device:isKindle() then
+        UIManager._voyage_usb_hooked = true
+        local orig = UIManager.event_handlers.Charging
+        if orig then
+            UIManager.event_handlers.Charging = function(...)
+                orig(...)
+                -- A computer takes a moment to enumerate; a wall charger never does.
+                local tries = 0
+                local function check()
+                    tries = tries + 1
+                    if computerConnected() then
+                        local plugin = activePlugin()
+                        if plugin then plugin:offerUsbMode() end
+                    elseif tries < 8 then
+                        UIManager:scheduleIn(0.5, check)
+                    end
+                end
+                UIManager:scheduleIn(0.5, check)
+            end
+        end
+    end
+end
+
 -- Ambient light, in lux, from the Kindle's power daemon. nil when unavailable.
 local lipc_handle
 local function readLux()
@@ -200,6 +245,34 @@ function VoyagePanel:showTextSettings()
         self.aapanel = nil
         UIManager:show(InfoMessage:new{ text = "Aa panel error:\n" .. tostring(err) })
     end
+end
+
+function VoyagePanel:offerUsbMode()
+    if self.usb_dialog then return end
+    local ConfirmBox = require("ui/widget/confirmbox")
+    self.usb_dialog = ConfirmBox:new{
+        text = _("Connect to your computer?\n\nKOReader will close so your Kindle can be used as a USB drive, and comes back when you eject it."),
+        ok_text = _("Connect"),
+        cancel_text = _("Not now"),
+        ok_callback = function()
+            self.usb_dialog = nil
+            self:enterUsbMode()
+        end,
+        cancel_callback = function() self.usb_dialog = nil end,
+    }
+    UIManager:show(self.usb_dialog)
+end
+
+function VoyagePanel:enterUsbMode()
+    -- The script must run from outside /mnt/us, which vanishes while the drive is mounted.
+    local src, dst = PLUGIN_DIR .. "/tools/usb-handoff.sh", "/tmp/voyage-usb-handoff.sh"
+    if os.execute(string.format("cp '%s' %s", src, dst)) ~= 0 then
+        UIManager:show(InfoMessage:new{ text = _("Couldn't start USB mode."), timeout = 3 })
+        return
+    end
+    -- Detach so it outlives KOReader (fall back to plain sh if this busybox lacks setsid).
+    os.execute(string.format("(command -v setsid >/dev/null && setsid sh %s || sh %s) </dev/null >/dev/null 2>&1 &", dst, dst))
+    self.ui.menu:exitOrRestart()
 end
 
 function VoyagePanel:showLibrary()

@@ -44,7 +44,7 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
 - [~] **Kindle-style loading.** (Installed 2026-10-09, awaiting test.) Books opened from the library open seamlessly: no "Opening file" box, the tapped row stays inverted until the page appears. All other message boxes use Amazon Ember, no info icon, short text centered (`src/patches/2-kindle-messages.lua`).
 
 ### Device
-- [ ] **"Connect to computer" menu item.** Exits KOReader to the Kindle UI so USB drive mode works.
+- [x] **USB handoff.** (Installed 2026-10-09; confirmed by user, KOReader relaunches after eject.) KOReader lives on the drive the Kindle exports, so it can't stay running while mounted. Plugging into a computer (detected via `fsl-usb2-udc/gadget/connected`, which a wall charger leaves at 0) shows "Connect to your computer?"; Connect exits KOReader and starts `tools/usb-handoff.sh` from /tmp, which waits for the gadget LUN (`gadget-lun0/file`) to be lent and returned, then relaunches KOReader once its files are reachable. Log copied to `/mnt/us/voyage-usb-handoff.log`.
 
 ## Done
 - [x] Library reorganized 2026-10-09: author folders removed (backup in `backup/author-folders-2026-10-09`), 197 Calibre EPUBs copied flat to `documents/` as `Title - Author.epub` (full titles from Calibre's metadata.opf). KFX store books left untouched.
