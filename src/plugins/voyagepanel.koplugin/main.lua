@@ -152,6 +152,19 @@ do
     end
 end
 
+-- Stock Kindle sleep screens: copy them where KOReader's random-image screensaver can use
+-- them (once; tools/stock-screensavers.sh only copies files that are missing).
+do
+    local marker = "/mnt/us/screensavers/bg_ss00.png"
+    local existing = io.open(marker, "r")
+    if existing then
+        existing:close()
+    elseif Device:isKindle() and not UIManager._voyage_screensavers then
+        UIManager._voyage_screensavers = true
+        os.execute(string.format("sh '%s/tools/stock-screensavers.sh' >/dev/null 2>&1 &", PLUGIN_DIR))
+    end
+end
+
 -- Ambient light, in lux, from the Kindle's power daemon. nil when unavailable.
 local lipc_handle
 local function readLux()

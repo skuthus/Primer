@@ -10,4 +10,11 @@ return {
     full_refresh_count = 0,
     night_full_refresh_count = 0,
     avoid_flashing_ui = true,
+    -- Stock Kindle sleep screens: a random one of the Kindle's own illustrations, copied to
+    -- /mnt/us/screensavers by the plugin. No "Sleeping" message over it.
+    screensaver_type = "random_image",
+    screensaver_dir = "/mnt/us/screensavers",
+    screensaver_show_message = false,
+    screensaver_stretch_images = false,
+    screensaver_img_background = "white",
 }

@@ -50,6 +50,9 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
 ### Loading & messages
 - [x] **Kindle-style loading.** (Installed 2026-10-09; confirmed by user.) Books opened from the library open seamlessly: no "Opening file" box, the tapped row stays inverted until the page appears. All other message boxes use Amazon Ember, no info icon, short text centered, and KOReader's "Opening file" box is never shown, including at startup and after the USB relaunch (`src/patches/2-kindle-messages.lua`).
 
+### Sleep screens
+- [x] **Stock Kindle sleep screens.** (Installed 2026-10-09; confirmed by user.) The Voyage is not Special Offers, so KOReader draws them: `screensaver_type = "random_image"` from `/mnt/us/screensavers`, no "Sleeping" message. The plugin copies the 20 stock illustrations (`/usr/share/blanket/screensaver/bg_ss00–19.png`, skipping the Amazon Kids set) there on first start (`tools/stock-screensavers.sh`). Add your own images to that folder to mix them in.
+
 ### Screen refresh
 - [~] **Kindle-style refresh.** (Installed 2026-10-09.) Flash-free REAGL page turns with no forced flash every N pages (`full_refresh_count = 0`, day and night), no black flashes on menus (`avoid_flashing_ui`), one full refresh at each chapter start (plugin `onPageUpdate`). Watch for ghosting in long chapters; fallback is a refresh every 20–30 pages.
 
