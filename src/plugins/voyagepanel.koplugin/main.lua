@@ -317,6 +317,15 @@ function VoyagePanel:autoTick()
     UIManager:scheduleIn(AUTO_INTERVAL_S, self.auto_tick)
 end
 
+-- Kindle-style refresh: flash-free (REAGL) page turns with no forced flash every N pages
+-- (full_refresh_count = 0), and one clean full refresh when a new chapter starts.
+function VoyagePanel:onPageUpdate(pageno)
+    if pageno and self.ui.toc and G_reader_settings:nilOrTrue("voyage_chapter_flash")
+            and self.ui.toc:isChapterStart(pageno) then
+        UIManager:setDirty(nil, "full")
+    end
+end
+
 function VoyagePanel:onSuspend()
     UIManager:unschedule(self.auto_tick)
     UIManager:unschedule(self.clock_tick)
