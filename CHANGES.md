@@ -26,7 +26,7 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Row 2: Aa, Go To (Contents, Notes, Page…, Beginning), bookmark ribbon (filled when the page is bookmarked; tap toggles).
   - Bottom: chapter, "Page X of Y | N mins left in chapter | P%", Book map / Page browser buttons.
   - Closes on tapping the page, swiping, or a page-turn button.
-- [~] **Kindle-style Aa panel.** (Installed 2026-10-09 as `voyagepanel.koplugin/aapanel.lua`, awaiting test.) Bottom sheet with Themes / Font / Layout / More tabs, laid out from screenshots of the Voyage's own (`design/reference/voyage-stock-aa-*.png`). Changes apply to the open book and become the default for all books.
+- [x] **Kindle-style Aa panel.** (Installed 2026-10-09 as `voyagepanel.koplugin/aapanel.lua`; confirmed by user.) Bottom sheet with Themes / Font / Layout / More tabs, laid out from screenshots of the Voyage's own (`design/reference/voyage-stock-aa-*.png`). Changes apply to the open book and become the default for all books.
   - Themes: Compact / Standard / Large presets, saved custom themes, Custom when unsaved; Save Current Settings; Manage Themes (delete).
   - Font: Font Family list (Kindle and sideloaded fonts, each shown in its own face), Bold 1–5, Size 1–14 (KOReader 22 = Kindle 4).
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
