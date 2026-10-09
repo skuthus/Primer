@@ -40,7 +40,11 @@ local function hookSwipe(MenuClass)
     function MenuClass:onSwipeShowMenu(ges)
         local plugin = self.ui and self.ui.voyagepanel
         if plugin and ges.direction == "south" then
-            plugin:showPanel()
+            -- Open only once the swipe is finished: opening mid-pan would let the rest of the
+            -- finger's movement land on the panel's brightness slider.
+            if ges.ges == "swipe" then
+                plugin:showPanel()
+            end
             self.ui:handleEvent(Event:new("HandledAsSwipe")) -- cancel any pan scroll made
             return true
         end
