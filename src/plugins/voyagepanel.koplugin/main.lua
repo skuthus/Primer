@@ -17,6 +17,12 @@ local NetworkMgr = require("ui/network/manager")
 local Library = require("library")
 local QuickPanel = require("quickpanel")
 local Toolbar = require("toolbar")
+local AaPanel = require("aapanel")
+local Font = require("ui/font")
+local FontChooser = require("ui/widget/fontchooser")
+local TextWidget = require("ui/widget/textwidget")
+local datetime = require("datetime")
+local Screen = Device.screen
 
 local AUTO_INTERVAL_S = 3
 
@@ -60,6 +66,23 @@ do
     end
 end
 
+-- Show Clock While Reading: the time centered in the top margin, like the Kindle.
+do
+    local ReaderView = require("apps/reader/modules/readerview")
+    if not ReaderView._voyage_clock_hooked then
+        ReaderView._voyage_clock_hooked = true
+        local orig = ReaderView.paintTo
+        function ReaderView:paintTo(bb, x, y)
+            orig(self, bb, x, y)
+            local plugin = self.ui and self.ui.voyagepanel
+            if plugin and G_reader_settings:isTrue("voyage_show_clock") then
+                local ok, err = pcall(plugin.paintClock, plugin, bb, x, y)
+                if not ok then logger.err("VoyageClock: paint failed:", err) end
+            end
+        end
+    end
+end
+
 -- Ambient light, in lux, from the Kindle's power daemon. nil when unavailable.
 local lipc_handle
 local function readLux()
@@ -84,6 +107,8 @@ function VoyagePanel:init()
     if self.auto then
         UIManager:scheduleIn(1, self.auto_tick)
     end
+    self.clock_tick = function() self:clockTick() end
+    if self.ui.document then self:onClockSettingChanged() end
     -- The Kindle-style library replaces the file browser as home. Plugins are created
     -- before the file browser builds its file list, so check once it has.
     if G_reader_settings:nilOrTrue("voyage_library") then
@@ -163,9 +188,18 @@ function VoyagePanel:showToolbar()
     end
 end
 
--- Aa. TODO: replace with the Kindle-style Font / Page / Progress panel.
+-- Aa: the Kindle-style Themes / Font / Layout / More panel.
 function VoyagePanel:showTextSettings()
-    self.ui:handleEvent(Event:new("ShowConfigMenu"))
+    if self.aapanel then return end
+    local ok, err = pcall(function()
+        self.aapanel = AaPanel:new{ plugin = self }
+        UIManager:show(self.aapanel)
+    end)
+    if not ok then
+        logger.err("VoyageAa: failed to open:", err)
+        self.aapanel = nil
+        UIManager:show(InfoMessage:new{ text = "Aa panel error:\n" .. tostring(err) })
+    end
 end
 
 function VoyagePanel:showLibrary()
@@ -212,17 +246,52 @@ end
 
 function VoyagePanel:onSuspend()
     UIManager:unschedule(self.auto_tick)
+    UIManager:unschedule(self.clock_tick)
 end
 
 function VoyagePanel:onResume()
     if self.auto then UIManager:scheduleIn(1, self.auto_tick) end
+    if self.ui.document then self:onClockSettingChanged() end
+end
+
+function VoyagePanel:paintClock(bb, x, y)
+    local file = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
+    local f = FontChooser.isFontRegistered(file) and Font:getFace(file, 14) or Font:getFace("ffont", 14)
+    local w = TextWidget:new{ text = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock")), face = f }
+    local size = w:getSize()
+    local margin = Screen:scaleBySize(self.ui.document.configurable.t_page_margin or 30)
+    local cx = math.floor((Screen:getWidth() - size.w) / 2)
+    local cy = math.max(0, math.floor((margin - size.h) / 2))
+    w:paintTo(bb, x + cx, y + cy)
+    w:free()
+    self.clock_rect = { x = cx, y = cy, w = size.w, h = size.h }
+end
+
+-- Repaint the clock at each minute boundary while it's shown.
+function VoyagePanel:clockTick()
+    if not (self.ui.document and G_reader_settings:isTrue("voyage_show_clock")) then return end
+    local Geom = require("ui/geometry")
+    local r = self.clock_rect
+    local region = r and Geom:new{ x = r.x - r.w, y = r.y, w = r.w * 3, h = r.h } or nil
+    UIManager:setDirty(self.ui, function() return "ui", region end)
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.clock_tick)
+end
+
+function VoyagePanel:onClockSettingChanged()
+    UIManager:unschedule(self.clock_tick)
+    if G_reader_settings:isTrue("voyage_show_clock") then
+        UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.clock_tick)
+    end
+    if self.ui.document then UIManager:setDirty(self.ui, "ui") end
 end
 
 function VoyagePanel:onCloseWidget()
     UIManager:unschedule(self.auto_tick)
+    UIManager:unschedule(self.clock_tick)
     if self.panel then UIManager:close(self.panel) end
     if self.library then UIManager:close(self.library) end
     if self.toolbar then UIManager:close(self.toolbar) end
+    if self.aapanel then UIManager:close(self.aapanel) end
 end
 
 function VoyagePanel:showPanel()

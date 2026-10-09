@@ -26,7 +26,11 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Row 2: Aa, Go To (Contents, Notes, Page…, Beginning), bookmark ribbon (filled when the page is bookmarked; tap toggles).
   - Bottom: chapter, "Page X of Y | N mins left in chapter | P%", Book map / Page browser buttons.
   - Closes on tapping the page, swiping, or a page-turn button.
-- [ ] **Kindle-style Aa panel** (Font / Page / Reading progress). Aa temporarily opens KOReader's text settings. Waiting on screenshots of the Voyage's own Aa tabs.
+- [~] **Kindle-style Aa panel.** (Installed 2026-10-09 as `voyagepanel.koplugin/aapanel.lua`, awaiting test.) Bottom sheet with Themes / Font / Layout / More tabs, laid out from screenshots of the Voyage's own (`design/reference/voyage-stock-aa-*.png`). Changes apply to the open book and become the default for all books.
+  - Themes: Compact / Standard / Large presets, saved custom themes, Custom when unsaved; Save Current Settings; Manage Themes (delete).
+  - Font: Font Family list (Kindle and sideloaded fonts, each shown in its own face), Bold 1–5, Size 1–14 (KOReader 22 = Kindle 4).
+  - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
+  - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
 
 ### Library
 - [~] **Kindle 2-style library as home.** (Installed 2026-10-09 in `voyagepanel.koplugin/library.lua`, awaiting test. Skips Kindle clutter: My Clippings, crash reports, Amazon dictionaries. KFX store books are not listed: KOReader cannot open them.) Replaces KOReader's file browser whenever it would show.
@@ -35,6 +39,9 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Rows: title in Caecilia (original Kindle serif) with length/progress dots, author right, "read" in the margin for finished books. Tapped row flashes inverted, then opens.
   - Sort (tap the label to cycle): Most Recent First (last opened or added), Title, Author, Newest Added. Remembered.
   - "Page N of M" footer; page buttons and left/right swipes turn pages. Tap the header for KOReader's menu, swipe down from the top for the quick panel.
+
+### Loading & messages
+- [~] **Kindle-style loading.** (Installed 2026-10-09, awaiting test.) Books opened from the library open seamlessly: no "Opening file" box, the tapped row stays inverted until the page appears. All other message boxes use Amazon Ember, no info icon, short text centered (`src/patches/2-kindle-messages.lua`).
 
 ### Device
 - [ ] **"Connect to computer" menu item.** Exits KOReader to the Kindle UI so USB drive mode works.

@@ -230,9 +230,8 @@ function Library:layout()
     self.pages = math.max(1, math.ceil(#self.books / self.per_page))
     self.page = math.min(self.page, self.pages)
 
-    -- Margin just wide enough for the "read" tag, so titles still line up.
-    self.gutter = self:text(_("read"), self.face_tag):getSize().w + round(W * 0.015)
-    self.title_x = pad + self.gutter
+    -- Titles line up with "Showing All…"; the "read" tag hangs in the margin, like the Kindle 2.
+    self.title_x = pad
     local text_w = W - self.title_x - pad
     self.title_max = round(text_w * 0.64)
     self.author_max = round(text_w * 0.32)
@@ -318,7 +317,8 @@ function Library:paintRow(bb, x, row_y, book, pressed)
 
     if finished then
         local tag = self:text(_("read"), self.face_tag)
-        tag:paintTo(bb, x + pad, title_y + round((th - tag:getSize().h) / 2))
+        local tag_x = math.max(round(W * 0.005), pad - round(W * 0.008) - tag:getSize().w)
+        tag:paintTo(bb, x + tag_x, title_y + round((th - tag:getSize().h) / 2))
     end
 
     -- Dots: count follows the book's size, filled dots show how far you've read.
@@ -388,13 +388,13 @@ function Library:onTap(__, ges)
 end
 
 function Library:openBook(index)
-    -- Flash the row inverted, Kindle-style, then open.
+    -- Like the Kindle: the tapped row stays inverted until the book appears,
+    -- with no "Opening file" box (seamless open).
     self.pressed = index
     self:refresh("fast")
     UIManager:scheduleIn(0.1, function()
-        self.pressed = nil
         local ReaderUI = require("apps/reader/readerui")
-        ReaderUI:showReader(self.books[index].file)
+        ReaderUI:showReader(self.books[index].file, nil, true)
     end)
 end
 
