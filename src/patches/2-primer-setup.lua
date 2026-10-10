@@ -1,6 +1,7 @@
 -- Primer's first-run setup, so a fresh install is ready without touching KOReader's menus.
 -- Runs before KOReader decides what to open, once per SETUP_VERSION:
 --   * Primer's look and behaviour (refresh, footer, sleep screens, start with the last book),
+--     on a new install only: someone updating Primer keeps the choices they've made,
 --   * reading defaults (font, size, margins…) only where there is no value yet,
 --   * gestures: KOReader's frontlight / brightness / page-flipping gestures off,
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
@@ -30,8 +31,17 @@ end
 
 local kindle_fonts = Device:isKindle() and exists("/usr/java/lib/fonts/Amazon-Ember-Regular.ttf")
 
--- Look and behaviour.
-local device = readDefaults("device")
+-- Primer has run here before (from before this setup existed) if any of its settings are there.
+local existing_primer = false
+for key in pairs(G_reader_settings.data) do
+    if type(key) == "string" and (key:find("^voyage_") or key:find("^primer_")) then
+        existing_primer = true
+        break
+    end
+end
+
+-- Look and behaviour (new installs only).
+local device = not existing_primer and readDefaults("device")
 if device then
     for k, v in pairs(device.all or {}) do G_reader_settings:saveSetting(k, v) end
     if Device:isKindle() then
@@ -39,7 +49,7 @@ if device then
     end
 end
 
-local footer = readDefaults("footer")
+local footer = not existing_primer and readDefaults("footer")
 if footer then
     if not kindle_fonts then footer.text_font_face = "primer/Inter-Regular.ttf" end
     local current = G_reader_settings:readSetting("footer") or {}
@@ -81,4 +91,4 @@ end
 
 G_reader_settings:saveSetting("primer_setup_version", SETUP_VERSION)
 G_reader_settings:flush()
-logger.info("Primer setup: applied version", SETUP_VERSION)
+logger.info("Primer setup: applied version", SETUP_VERSION, existing_primer and "(update: kept look settings)" or "(new install)")
