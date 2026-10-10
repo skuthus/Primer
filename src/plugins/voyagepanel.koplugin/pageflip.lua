@@ -329,7 +329,7 @@ function PageFlip:tool(id)
     if id == "aa" then
         self.plugin:showTextSettings()
     elseif id == "contents" then
-        ui.toc:onShowToc()
+        self.plugin:showGoTo()
     elseif id == "search" then
         ui.search:onShowFulltextSearchInput()
     elseif id == "kebab" then

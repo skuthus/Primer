@@ -20,6 +20,7 @@ local Toolbar = require("toolbar")
 local AaPanel = require("aapanel")
 local Dialog = require("dialog")
 local PageFlip = require("pageflip")
+local GoTo = require("goto")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -283,6 +284,20 @@ function VoyagePanel:showPageFlip()
     end
 end
 
+-- Go To: Kindle-style chapter list.
+function VoyagePanel:showGoTo()
+    if self.goto_view or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.goto_view = GoTo:new{ plugin = self }
+        UIManager:show(self.goto_view)
+    end)
+    if not ok then
+        logger.err("VoyageGoTo: failed to open:", err)
+        self.goto_view = nil
+        UIManager:show(InfoMessage:new{ text = "Go To error:\n" .. tostring(err) })
+    end
+end
+
 -- Aa: the Kindle-style Themes / Font / Layout / More panel.
 function VoyagePanel:showTextSettings()
     if self.aapanel then return end
@@ -432,6 +447,7 @@ function VoyagePanel:onCloseWidget()
     if self.toolbar then UIManager:close(self.toolbar) end
     if self.aapanel then UIManager:close(self.aapanel) end
     if self.pageflip then UIManager:close(self.pageflip) end
+    if self.goto_view then UIManager:close(self.goto_view) end
 end
 
 function VoyagePanel:showPanel()

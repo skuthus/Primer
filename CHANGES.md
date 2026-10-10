@@ -32,6 +32,9 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
 
+### Go To
+- [x] **Kindle-style Go To with chapters.** (Installed 2026-10-09 as `voyagepanel.koplugin/goto.lua`; confirmed by user.) Opens from the toolbar's Go To and the page flip's contents icon. Chapters with page numbers (sub-chapters indented), current chapter bold with a margin bar, opens on the current chapter's page of the list; tap to jump (Back returns). "Page…" for a page number, Notes tab for highlights/bookmarks; swipe or page buttons for long contents.
+
 ### Page flip
 - [x] **Kindle-style page flip on swipe up from the bottom** (replaces KOReader's settings bar swipe). (Installed 2026-10-09 as `voyagepanel.koplugin/pageflip.lua`; confirmed by user.) Laid out from a photo of a Kindle's page flip (`design/reference/kindle-pageflip-photo.webp`).
   - Status line with ⌄ chevron (closes), toolbar: ← Library, Aa, Contents, Page flip, Bookmark, Search, ⋮; book title.

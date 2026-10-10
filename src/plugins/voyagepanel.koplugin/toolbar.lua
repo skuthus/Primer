@@ -306,12 +306,7 @@ function Toolbar:act(id)
         self.plugin:showTextSettings()
     elseif id == "goto" then
         self:onClose()
-        self:menu(_("Go To"), {
-            { _("Contents"), function() ui.toc:onShowToc() end },
-            { _("Notes"), function() ui.bookmark:onShowBookmark() end },
-            { _("Page…"), function() ui.gotopage:onShowGotoDialog() end },
-            { _("Beginning"), function() ui.gotopage:onGoToBeginning() end },
-        })
+        self.plugin:showGoTo()
     elseif id == "bookmark" then
         ui.bookmark:onToggleBookmark()
         self:refresh()
