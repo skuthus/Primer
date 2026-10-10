@@ -220,6 +220,11 @@ function SearchResults:onSwipe(__, ges)
     return true
 end
 
+function SearchResults:onShow()
+    self:refresh("flashui")
+    return true
+end
+
 function SearchResults:onClose()
     UIManager:close(self)
     return true

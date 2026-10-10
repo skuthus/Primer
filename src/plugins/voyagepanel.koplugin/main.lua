@@ -27,6 +27,8 @@ local Notebook = require("notebook")
 local Stats = require("stats")
 local EndCard = require("endcard")
 local WifiList = require("wifilist")
+local BookMap = require("bookmap")
+local PageGrid = require("pagegrid")
 local SearchBar = require("searchbar")
 local SearchResults = require("searchresults")
 local SettingsView = require("settings")
@@ -225,6 +227,28 @@ do
         NetworkSetting._voyage_hooked = true
         function NetworkSetting.new(__, o)
             return WifiList:new(o)
+        end
+    end
+end
+
+-- Book map and page browser: Primer's book map and Kindle-style page grid, from the toolbar,
+-- the page flip, or any gesture set to them.
+do
+    local ReaderThumbnail = require("apps/reader/modules/readerthumbnail")
+    if not ReaderThumbnail._voyage_hooked then
+        ReaderThumbnail._voyage_hooked = true
+        local orig_map, orig_browser = ReaderThumbnail.onShowBookMap, ReaderThumbnail.onShowPageBrowser
+        function ReaderThumbnail:onShowBookMap(...)
+            local plugin = self.ui and self.ui.voyagepanel
+            if not plugin then return orig_map(self, ...) end
+            plugin:showBookMap()
+            return true
+        end
+        function ReaderThumbnail:onShowPageBrowser(...)
+            local plugin = self.ui and self.ui.voyagepanel
+            if not plugin then return orig_browser(self, ...) end
+            plugin:showPageGrid()
+            return true
         end
     end
 end
@@ -675,6 +699,30 @@ function VoyagePanel:wifiSummary()
     local ok, current = pcall(NetworkMgr.getCurrentNetwork, NetworkMgr)
     if ok and current and current.ssid then return string.format(_("Connected to %s"), current.ssid) end
     return _("Not connected · choose a network to join")
+end
+
+function VoyagePanel:showBookMap()
+    if self.bookmap or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.bookmap = BookMap:new{ plugin = self }
+        UIManager:show(self.bookmap)
+    end)
+    if not ok then
+        logger.err("VoyageBookMap: failed to open:", err)
+        self.bookmap = nil
+    end
+end
+
+function VoyagePanel:showPageGrid()
+    if self.pagegrid or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.pagegrid = PageGrid:new{ plugin = self }
+        UIManager:show(self.pagegrid)
+    end)
+    if not ok then
+        logger.err("VoyagePageGrid: failed to open:", err)
+        self.pagegrid = nil
+    end
 end
 
 function VoyagePanel:showStats()

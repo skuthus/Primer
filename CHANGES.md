@@ -95,6 +95,11 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Wi-Fi network list.** Replaces KOReader's picker: networks by strength with drawn signal bars and state (Connected / Saved / Secured / Open); tap to connect (password prompt when needed) or disconnect; long-press a saved one for Password / Forget.
 - [x] **Leftover dialogs.** Shared Primer prompt (`prompt.lua`) for Save Current Settings and Rename your Kindle; Manage Themes is a list inside the Aa panel (Delete, confirmed); the page flip's ⋮ uses the same dropdown as the toolbar (`dropdown.lua`: Notebook, Reading Statistics).
 
+### Book map & page grid (2026-10-10, confirmed by user)
+- [x] **Page grid** replaces KOReader's page browser (toolbar, page flip grid button, gestures): pages as thumbnails 3×3 with numbers under them, your page outlined in bold, the chapter of the first page above, header "‹ Title · Page X of Y", a track at the bottom (tap to jump). Swipe / page buttons for the next nine; tap a page to go there.
+- [x] **Book map** replaces KOReader's: a bar for the whole book (chapter breaks, your place marked, read part filled), then the chapters, each with its first page and a bar filled as far as you've read, with marks under it for bookmarks (black) and highlights / notes (grey). Opens on the current chapter (bold); tap one to go there.
+- [x] Book map, page grid and search results repaint the whole screen on opening (the book page no longer shows through).
+
 ### Gestures
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 
