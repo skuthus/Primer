@@ -1,5 +1,5 @@
 #!/bin/sh
-# KO-Plus USB handoff. KOReader has exited so the Kindle can lend its drive to the computer.
+# Primer USB handoff. KOReader has exited so the Kindle can lend its drive to the computer.
 # Wait for USB drive mode to start and finish, then bring KOReader back.
 # Runs from /tmp (copied there first): /mnt/us is unusable while the drive is lent out.
 
@@ -38,11 +38,11 @@ cp "$LOG" /mnt/us/voyage-usb-handoff.log 2>/dev/null
 if [ -e /mnt/us/NO_KOREADER ]; then
 	log "NO_KOREADER present, staying in Kindle UI"
 elif reachable; then
-	log "relaunching KOReader"
+	log "relaunching Primer"
 	cp "$LOG" /mnt/us/voyage-usb-handoff.log 2>/dev/null
 	cd /
 	exec /bin/sh "$KOREADER" --framework_stop >/dev/null 2>&1
 else
-	log "KOReader not reachable, giving up"
+	log "Primer not reachable, giving up"
 fi
 cp "$LOG" /mnt/us/voyage-usb-handoff.log 2>/dev/null

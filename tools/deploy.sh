@@ -1,5 +1,5 @@
 #!/bin/sh
-# Lint, then copy KO-Plus onto a USB-mounted Kindle. Usage: tools/deploy.sh [/Volumes/Kindle]
+# Lint, then copy Primer onto a USB-mounted Kindle. Usage: tools/deploy.sh [/Volumes/Kindle]
 set -e
 KINDLE="${1:-/Volumes/Kindle}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

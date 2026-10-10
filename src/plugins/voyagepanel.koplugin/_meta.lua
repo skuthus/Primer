@@ -1,5 +1,5 @@
 local _ = require("gettext")
 return {
-    fullname = _("Quick panel"),
-    description = _([[Kindle-style quick settings panel. Swipe down from the top edge to open it.]]),
+    fullname = _("Primer"),
+    description = _([[Primer: the Kindle-style interface (library, toolbar, quick panel, Aa, dictionary, notes, settings).]]),
 }

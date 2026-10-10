@@ -1,5 +1,5 @@
 #!/bin/sh
-# Syntax, unknown-global and `_`-shadowing checks for every KO-Plus Lua file.
+# Syntax, unknown-global and `_`-shadowing checks for every Primer Lua file.
 set -e
 cd "$(dirname "$0")"
 [ -d node_modules/luaparse ] || npm install --silent >/dev/null

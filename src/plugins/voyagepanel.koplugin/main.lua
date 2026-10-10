@@ -435,7 +435,7 @@ function VoyagePanel:offerUsbMode()
     if self.usb_dialog or not G_reader_settings:nilOrTrue("voyage_usb_prompt") then return end
     self.usb_dialog = Dialog:new{
         title = _("Connect to Computer"),
-        text = _("Use your Kindle as a USB drive? KOReader will close while it's connected and come back when you eject it."),
+        text = _("Use your Kindle as a USB drive? Primer will close while it's connected and come back when you eject it."),
         buttons = {
             { text = _("Not Now"), callback = function() self.usb_dialog = nil end },
             { text = _("Connect"), bold = true, callback = function()

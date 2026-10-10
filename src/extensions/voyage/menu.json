@@ -1,11 +1,11 @@
 {
 	"items": [
 		{
-			"name": "Voyage",
+			"name": "Primer",
 			"priority": 0,
 			"items": [
 				{
-					"name": "Start KOReader at boot: Enable",
+					"name": "Start Primer at boot: Enable",
 					"priority": 1,
 					"action": "./bin/autostart.sh",
 					"params": "enable",
@@ -14,7 +14,7 @@
 					"internal": "status Installing boot job . . ."
 				},
 				{
-					"name": "Start KOReader at boot: Disable",
+					"name": "Start Primer at boot: Disable",
 					"priority": 2,
 					"action": "./bin/autostart.sh",
 					"params": "disable",

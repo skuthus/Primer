@@ -1,7 +1,7 @@
 --[[--
 Kindle-style Settings: a status line, "Settings" with ⋮ (KOReader's full menu) and ✕, then
 category rows (icon, bold title, optional subtitle, ›) leading to pages of toggles, choices
-and actions. Only the settings that matter on KO-Plus; KOReader's own menu stays behind ⋮.
+and actions. Only the settings that matter on Primer; KOReader's own menu stays behind ⋮.
 Layout follows a screenshot of a Kindle's Settings (1072px wide).
 
 Row kinds:  page (opens rows)  toggle (switch)  choice (opens a pick-one list)  action  info
@@ -96,7 +96,7 @@ function Settings:pages()
             end },
         (function()
             local get, set = setting("start_with", "filemanager")
-            return { kind = "choice", title = _("When KOReader starts"),
+            return { kind = "choice", title = _("When Primer starts"),
                 choices = { { _("Open the last book"), "last" }, { _("Show the library"), "filemanager" } },
                 get = get, set = set }
         end)(),
@@ -106,7 +106,7 @@ function Settings:pages()
         { kind = "toggle", title = _("Swap page-turn buttons"),
             get = function() return G_reader_settings:isTrue("input_invert_page_turn_keys") end,
             set = function() UIManager:broadcastEvent(Event:new("SwapPageTurnButtons")) end },
-        { kind = "action", title = _("Restart KOReader"), run = function()
+        { kind = "action", title = _("Restart Primer"), run = function()
             self:onClose()
             UIManager:restartKOReader()
         end },
@@ -170,7 +170,7 @@ function Settings:pages()
     } end }
 
     P.library = { title = _("Home and Library"), rows = function() return {
-        { kind = "toggle", title = _("Kindle-style library"), subtitle = _("Use it instead of KOReader's file browser"),
+        { kind = "toggle", title = _("Kindle-style library"), subtitle = _("Instead of the plain file browser"),
             get = function() return G_reader_settings:nilOrTrue("voyage_library") end,
             set = function(on) G_reader_settings:saveSetting("voyage_library", on) end },
         (function()
@@ -185,7 +185,7 @@ function Settings:pages()
     P.advanced = { title = _("Advanced"), rows = function()
         local ssh = ui.SSH
         return {
-            { kind = "action", title = _("All KOReader settings"), subtitle = _("KOReader's full menu"),
+            { kind = "action", title = _("Full settings menu"), subtitle = _("Every option of KOReader, which Primer is built on"),
                 run = function()
                     self:onClose()
                     if reading and G_reader_settings:nilOrTrue("show_bottom_menu") then
@@ -194,7 +194,7 @@ function Settings:pages()
                     ui.menu:onShowMenu()
                 end },
             { kind = "toggle", title = _("SSH server"), enabled = ssh ~= nil,
-                subtitle = _("For installing KO-Plus updates over Wi-Fi"),
+                subtitle = _("For installing Primer updates over Wi-Fi"),
                 get = function() return ssh and ssh:isRunning() end,
                 set = function(on)
                     if on then ssh:start() else ssh:stop() end
@@ -205,8 +205,8 @@ function Settings:pages()
     P.about = { title = _("About"), rows = function()
         local ok, version = pcall(function() return require("version"):getCurrentRevision() end)
         return {
-            { kind = "info", title = "KO-Plus", subtitle = _("Kindle-style KOReader for the Voyage") },
-            { kind = "info", title = _("KOReader"), subtitle = ok and version or "?" },
+            { kind = "info", title = "Primer", subtitle = _("Kindle-style reading for the Voyage") },
+            { kind = "info", title = _("Built on KOReader"), subtitle = ok and version or "?" },
             { kind = "info", title = _("Device"), subtitle = Device.model or "Kindle" },
         }
     end }
@@ -221,6 +221,8 @@ function Settings:pages()
         { kind = "page", icon = "s-book", title = _("Home and Library"), page = P.library },
         { kind = "page", icon = "s-advanced", title = _("Advanced"), page = P.advanced },
         { kind = "page", icon = "s-help", title = _("About"), page = P.about },
+        { kind = "action", icon = "s-exit", title = _("Exit"), subtitle = _("Return to the Kindle home screen"),
+            run = function() self:confirmExit() end },
     } end }
     return P
 end
@@ -459,6 +461,23 @@ function Settings:rename()
     }
     UIManager:show(dialog)
     dialog:onShowKeyboard()
+end
+
+-- Exit Primer to the Kindle's own interface, after a Kindle-style confirmation.
+function Settings:confirmExit()
+    local Dialog = require("dialog")
+    UIManager:show(Dialog:new{
+        title = _("Exit Primer?"),
+        text = _("Your place is saved. Your Kindle will return to its home screen."),
+        buttons = {
+            { text = _("Cancel") },
+            { text = _("Exit"), bold = true, callback = function()
+                self:onClose()
+                -- Quit explicitly once the book/library has closed and saved.
+                self.ui.menu:exitOrRestart(function() UIManager:quit() end)
+            end },
+        },
+    })
 end
 
 function Settings:onTap(__, ges)

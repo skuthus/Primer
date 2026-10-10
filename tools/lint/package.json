@@ -1,6 +1,6 @@
 {
-  "name": "ko-plus-lint",
+  "name": "primer-lint",
   "private": true,
-  "description": "Static checks for KO-Plus Lua (no KOReader runtime on macOS)",
+  "description": "Static checks for Primer Lua (no KOReader runtime on macOS)",
   "dependencies": { "luaparse": "0.3.1" }
 }

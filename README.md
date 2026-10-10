@@ -1,6 +1,8 @@
-# KO-Plus
+# Primer
 
-A curated, Kindle-feeling KOReader for the Kindle Voyage: KOReader as the whole OS, trimmed and restyled to look and behave like the stock Kindle software.
+A Kindle-style reading system for the Kindle Voyage, built on [KOReader](https://github.com/koreader/koreader): KOReader as the whole OS, trimmed and restyled to look and behave like the stock Kindle software.
+
+The name: a first book; the interactive book in Neal Stephenson's *The Diamond Age*; and a quiet nod to Amazon (Prime → Primer).
 
 Target: Kindle Voyage, firmware 5.13.6, jailbroken, KOReader v2026.07.1 (`kindlepw2` build). See [CHANGES.md](CHANGES.md) for what's done and planned.
 
@@ -28,7 +30,7 @@ Restart KOReader to load the changes. Errors land in `koreader/crash.log` on the
 
 ## Dictionary
 
-KO-Plus expects a StarDict dictionary in `koreader/data/dict/` on the Kindle. We use the English-English Wiktionary from [Vuizur/Wiktionary-Dictionaries](https://github.com/Vuizur/Wiktionary-Dictionaries) (`English-English Wiktionary dictionary stardict.tar.gz`, CC BY-SA); unpack it and copy its folder there. It isn't committed here (30 MB).
+Primer expects a StarDict dictionary in `koreader/data/dict/` on the Kindle. We use the English-English Wiktionary from [Vuizur/Wiktionary-Dictionaries](https://github.com/Vuizur/Wiktionary-Dictionaries) (`English-English Wiktionary dictionary stardict.tar.gz`, CC BY-SA); unpack it and copy its folder there. It isn't committed here (30 MB).
 
 ## Notes
 

@@ -25,7 +25,7 @@ case "$1" in
 		sync
 		rootfs_ro
 		if same "$JOB_SRC" "$JOB_DST"; then
-			say "KOReader will start at boot"
+			say "Primer will start at boot"
 		else
 			say "Voyage: install FAILED"
 		fi
