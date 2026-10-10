@@ -30,14 +30,6 @@
 					"exitmenu": false,
 					"status": false,
 					"internal": "status Checking . . ."
-				},
-				{
-					"name": "Find device name",
-					"priority": 4,
-					"action": "./bin/find-device-name.sh",
-					"exitmenu": false,
-					"status": false,
-					"internal": "status Searching . . ."
 				}
 			]
 		}

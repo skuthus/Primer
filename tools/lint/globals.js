@@ -1,6 +1,6 @@
 // Report identifiers that resolve to globals, by walking the finished AST with scope info.
 const fs=require('fs'),lp=require('luaparse');
-const ok=new Set(['G_reader_settings','G_defaults','math','string','os','table','pairs','ipairs','tostring','tonumber','require','pcall','xpcall','type','print','next','select','error','assert','unpack','setmetatable','getmetatable','rawget','rawset','coroutine','io','debug']);
+const ok=new Set(['G_reader_settings','G_defaults','math','string','os','table','pairs','ipairs','tostring','tonumber','require','pcall','xpcall','type','print','next','select','error','assert','unpack','setmetatable','getmetatable','rawget','rawset','coroutine','io','debug','dofile','bit','jit']);
 let bad=false;
 for (const f of process.argv.slice(2)) {
   const ast=lp.parse(fs.readFileSync(f,'utf8'),{luaVersion:'5.1',scope:true,locations:true});

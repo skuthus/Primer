@@ -8,6 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cp -RX "$ROOT/src/plugins/." "$KINDLE/koreader/plugins/"
 mkdir -p "$KINDLE/koreader/patches" && cp -X "$ROOT"/src/patches/*.lua "$KINDLE/koreader/patches/"
 cp -RX "$ROOT/src/extensions/." "$KINDLE/extensions/"
+rm -rf "$KINDLE/extensions/voyage" # the KUAL extension's old name
 # Bundled open fonts (used when the Kindle's own fonts aren't there).
 mkdir -p "$KINDLE/koreader/fonts/primer" && cp -X "$ROOT"/src/fonts/* "$KINDLE/koreader/fonts/primer/"
 find "$KINDLE/koreader/plugins" "$KINDLE/koreader/patches" "$KINDLE/extensions" "$KINDLE/koreader/fonts/primer" -name '._*' -delete

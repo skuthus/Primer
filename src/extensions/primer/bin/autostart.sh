@@ -1,10 +1,14 @@
 #!/bin/sh
-# KUAL > Voyage: install, remove, or report the KOReader start-at-boot job.
+# Install, remove, or report the start-at-boot job. From KUAL (Primer menu), or from Primer's
+# own Settings / welcome screen with "quiet" as the second argument (no on-screen message).
 
-JOB_SRC="/mnt/us/extensions/voyage/koreader-autostart.conf"
+JOB_SRC="/mnt/us/extensions/primer/koreader-autostart.conf"
 JOB_DST="/etc/upstart/koreader-autostart.conf"
 
+QUIET="$2"
+
 say() {
+	[ "$QUIET" = "quiet" ] && return
 	if [ -x /mnt/us/koreader/fbink ]; then
 		/mnt/us/koreader/fbink -qpm -y -6 "$1"
 	else
@@ -19,7 +23,7 @@ same() { [ "$(md5sum < "$1")" = "$(md5sum < "$2" 2>/dev/null)" ]; }
 
 case "$1" in
 	enable)
-		[ -f "$JOB_SRC" ] || { say "Voyage: job file missing"; exit 1; }
+		[ -f "$JOB_SRC" ] || { say "Primer: job file missing"; exit 1; }
 		rootfs_rw
 		cp -f "$JOB_SRC" "$JOB_DST" && chmod 644 "$JOB_DST"
 		sync
@@ -27,7 +31,7 @@ case "$1" in
 		if same "$JOB_SRC" "$JOB_DST"; then
 			say "Primer will start at boot"
 		else
-			say "Voyage: install FAILED"
+			say "Primer: install FAILED"
 		fi
 		;;
 	disable)
@@ -36,7 +40,7 @@ case "$1" in
 		sync
 		rootfs_ro
 		if [ -e "$JOB_DST" ]; then
-			say "Voyage: remove FAILED"
+			say "Primer: remove FAILED"
 		else
 			say "Kindle UI will start at boot"
 		fi

@@ -4,7 +4,7 @@
 		<name>Primer</name>
 		<version>1.0</version>
 		<author>skuthus</author>
-		<id>voyage</id>
+		<id>primer</id>
 	</information>
 	<menus>
 		<menu type="json" dynamic="true">menu.json</menu>

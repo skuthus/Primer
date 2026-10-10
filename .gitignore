@@ -4,3 +4,5 @@ design/icon-previews/
 tools/lint/node_modules/
 tools/lint/package-lock.json
 .DS_Store
+dist/
+vendor/

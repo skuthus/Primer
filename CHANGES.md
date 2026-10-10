@@ -100,10 +100,18 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Book map** replaces KOReader's: a bar for the whole book (chapter breaks, your place marked, read part filled), then the chapters, each with its first page and a bar filled as far as you've read, with marks under it for bookmarks (black) and highlights / notes (grey). Opens on the current chapter (bold); tap one to go there.
 - [x] Book map, page grid and search results repaint the whole screen on opening (the book page no longer shows through).
 
+### Installation (2026-10-10, awaiting test)
+- [~] **Plug and play.** First-run setup patch (`2-primer-setup.lua`) applies Primer's defaults (look, refresh, footer, Kindle sleep screens, start with last book; reading font/size/margins only where unset, Literata off-Kindle), turns off KOReader's frontlight / brightness / page-flip gestures, and skips KOReader's quickstart guide. Defaults moved into the plugin (`defaults/`); `tools/apply-gestures.py` retired.
+- [~] **Welcome screen** on first start: how to open the panel, toolbar and page flip; offers "Start at Boot" on Kindles; warns if KOReader is older than 2026.07.
+- [~] **Settings > Device options > Start Primer at boot** toggle (Kindle).
+- [~] **Device name** defaults to the Kindle's own registered name (reginfo) instead of a hard-coded one.
+- [~] KUAL extension renamed `extensions/primer` (dev probe "Find device name" removed); the old `extensions/voyage` is removed on deploy.
+- [~] **Release zip**: `tools/package.sh` (optionally with KOReader and a dictionary), `INSTALL.txt` guide, `VERSION`.
+
 ### Gestures
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 
-- [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Apply with `tools/apply-gestures.py`. Confirmed by user.
+- [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Applied by the first-run setup. Confirmed by user.
 - [x] **Tapping the bottom of the page turns it** instead of opening KOReader's settings bar (2026-10-10). Confirmed by user.
 - [x] **Quick panel opens on swipe release**, so the rest of the opening swipe can't drag the brightness slider. Confirmed by user.
 

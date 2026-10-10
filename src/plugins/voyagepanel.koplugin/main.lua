@@ -463,7 +463,8 @@ end
 function VoyagePanel:init()
     -- Off-Kindle, the footer's Amazon Ember setting points nowhere: use Primer's bundled UI font.
     local footer = G_reader_settings:readSetting("footer")
-    if footer and footer.text_font_face and not lfs.attributes(footer.text_font_face, "mode") then
+    local face = footer and footer.text_font_face
+    if face and not (lfs.attributes(face, "mode") or lfs.attributes("./fonts/" .. face, "mode")) then
         footer.text_font_face = Fonts.path("ui")
     end
     self.auto_tick = function() self:autoTick() end
@@ -480,10 +481,77 @@ function VoyagePanel:init()
             if self.ui.file_chooser then self:showLibrary() end
         end)
     end
+    if not G_reader_settings:isTrue("primer_welcomed") then
+        UIManager:scheduleIn(1, function() self:showWelcome() end)
+    end
 end
 
+-- Start at boot (Kindle): the upstart job installed by the KUAL extension's script.
+local AUTOSTART_JOB = "/etc/upstart/koreader-autostart.conf"
+local AUTOSTART_SCRIPT = "/mnt/us/extensions/primer/bin/autostart.sh"
+
+function VoyagePanel:canAutostart()
+    return Device:isKindle() and lfs.attributes(AUTOSTART_SCRIPT, "mode") == "file"
+end
+
+function VoyagePanel:isAutostartOn()
+    return lfs.attributes(AUTOSTART_JOB, "mode") == "file"
+end
+
+function VoyagePanel:setAutostart(on)
+    os.execute(string.format("/bin/sh %s %s quiet", AUTOSTART_SCRIPT, on and "enable" or "disable"))
+    return self:isAutostartOn() == on
+end
+
+-- KOReader release Primer was built and tested against; older ones may lack what it hooks.
+local TESTED_KOREADER = "v2026.07"
+
+-- First run: a short welcome, offering to start Primer when the Kindle starts.
+function VoyagePanel:showWelcome()
+    if G_reader_settings:isTrue("primer_welcomed") or self.welcome_shown then return end
+    self.welcome_shown = true
+    local text = _("Swipe down from the top for quick settings. Tap the top of a page for the reading toolbar, and swipe up from the bottom to flip through the book.")
+    local Version = require("version")
+    local ok, current = pcall(Version.getNormalizedCurrentVersion, Version)
+    if ok and current and current < Version:getNormalizedVersion(TESTED_KOREADER) then
+        text = text .. "\n\n" .. string.format(_("Primer was made for KOReader %s or newer. Update KOReader if something doesn't look right."), TESTED_KOREADER:sub(2))
+    end
+    local function done() G_reader_settings:makeTrue("primer_welcomed") end
+    local buttons
+    if self:canAutostart() and not self:isAutostartOn() then
+        text = text .. "\n\n" .. _("Start Primer whenever your Kindle turns on? You can change this in Settings.")
+        buttons = {
+            { text = _("Not Now"), callback = done },
+            { text = _("Start at Boot"), bold = true, callback = function()
+                done()
+                if not self:setAutostart(true) then
+                    UIManager:show(InfoMessage:new{ text = _("Couldn't set Primer to start at boot. Try KUAL > Primer."), timeout = 4 })
+                end
+            end },
+        }
+    else
+        buttons = { { text = _("Get Started"), bold = true, callback = done } }
+    end
+    UIManager:show(Dialog:new{ title = _("Welcome to Primer"), text = text, buttons = buttons })
+end
+
+-- The name set in Settings, else the Kindle's own registered name, else the model.
 function VoyagePanel:deviceName()
-    return G_reader_settings:readSetting("voyage_device_name") or Device.model or "Primer"
+    local name = G_reader_settings:readSetting("voyage_device_name")
+    if name then return name end
+    if self.registered_name == nil then
+        self.registered_name = false
+        local f = Device:isKindle() and io.open("/var/local/java/prefs/reginfo", "r")
+        if f then
+            local info = f:read("*a") or ""
+            f:close()
+            local found = info:match('[Dd]evice[_ ]?[Nn]ame%s*[=:]%s*"([^"]+)"') or info:match("<deviceName>([^<]+)</deviceName>")
+                or info:match("[Dd]evice[_ ]?[Nn]ame%s*[=:]%s*([^\r\n]+)")
+            self.registered_name = found and found:match("^%s*(.-)%s*$") or false
+            if self.registered_name == "" then self.registered_name = false end
+        end
+    end
+    return self.registered_name or Device.model or "Primer"
 end
 
 local function wirelessHandle()

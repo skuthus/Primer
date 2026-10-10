@@ -11,14 +11,32 @@ Target: Kindle Voyage, firmware 5.13.6, jailbroken, KOReader v2026.07.1 (`kindle
 | Path | What it is |
 |---|---|
 | `src/plugins/voyagepanel.koplugin/` | The main plugin: swipe-down quick panel, Kindle 2-style library (home), Kindle-style reading toolbar on top tap, Auto Brightness |
+| `src/plugins/voyagepanel.koplugin/defaults/` | Primer's default settings (look, footer, reading, gestures), applied on first run |
+| `src/patches/2-primer-setup.lua` | First-run setup: applies the defaults (reading ones only where unset), skips KOReader's quickstart |
+| `src/patches/2-primer-ui.lua` | Primer's interface font across KOReader's own screens, square windows, Kindle-style keyboard |
 | `src/patches/2-kindle-footer.lua` | Kindle-style footer: "Page 9" left, "45%" right, aligned to the text margins |
-| `src/defaults/` | Reading and footer settings to restore after a reinstall (merged into `settings.reader.lua`) |
-| `src/extensions/voyage/` | KUAL menu: start KOReader at boot (once per boot, `/mnt/us/NO_KOREADER` skips it), find the device name |
+| `src/patches/2-kindle-messages.lua` | Kindle-style message boxes; hides "Opening file" |
+| `src/extensions/primer/` | KUAL menu: start Primer at boot (once per boot, `/mnt/us/NO_KOREADER` skips it). Primer's Settings and welcome screen use the same script |
+| `INSTALL.txt` | End-user install guide, shipped in the release zip |
+| `tools/package.sh` | Build the release zip (`dist/Primer-<version>.zip`) |
 | `tools/lint/` | Static checks (syntax, unknown globals, `_` shadowing). There's no KOReader for macOS, so these run before every deploy |
 | `tools/deploy.sh` | Lint, then copy everything onto a USB-mounted Voyage |
 | `design/` | Reference screenshots and icon previews |
 
-## Deploy
+## Install (users)
+
+See [INSTALL.txt](INSTALL.txt). In short: on a jailbroken Kindle with KUAL and KOReader, copy the release zip's `koreader` and `extensions` folders onto the Kindle and start KOReader. Primer sets itself up on first start (defaults, gestures, no quickstart guide) and offers to start at boot.
+
+## Release
+
+```sh
+tools/package.sh                                   # dist/Primer-<version>.zip
+tools/package.sh --koreader koreader-kindlepw2-….zip   # …-with-KOReader.zip, KOReader included
+```
+
+A StarDict dictionary folder placed in `vendor/dict/` (git-ignored) is included in `koreader/data/dict/`. The version is in `VERSION`.
+
+## Deploy (development)
 
 Exit KOReader on the Voyage (so USB drive mode is available), plug in, then:
 

@@ -1,5 +1,5 @@
--- Reading defaults captured from the Voyage on 2026-10-09 (user-set via long-press "set as default").
--- Applied as global defaults by the curated build; per-book overrides still win.
+-- Reading defaults (tuned on the Voyage, 2026-10-09). Applied on first run only where the reader
+-- has no value of their own; off-Kindle the font is Literata (Bookerly is Amazon's).
 return {
     cre_font                  = "Bookerly",
     copt_font_size            = 22,

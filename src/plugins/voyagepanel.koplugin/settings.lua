@@ -93,6 +93,10 @@ function Settings:pages()
                 G_reader_settings:saveSetting("twelve_hour_clock", not on)
                 plugin:onClockSettingChanged()
             end },
+        plugin:canAutostart() and { kind = "toggle", title = _("Start Primer at boot"),
+            subtitle = _("Instead of the Kindle's home screen when it turns on"),
+            get = function() return plugin:isAutostartOn() end,
+            set = function(on) plugin:setAutostart(on) end } or false,
         Device:isKindle() and { kind = "toggle", title = _("Ask to connect to a computer"), subtitle = _("When a USB cable to a computer is plugged in"),
             get = function() return G_reader_settings:nilOrTrue("voyage_usb_prompt") end,
             set = function(on) G_reader_settings:saveSetting("voyage_usb_prompt", on) end } or false,

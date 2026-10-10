@@ -1,4 +1,5 @@
--- Gesture overrides (koreader/settings/gestures.lua), applied to both gesture_fm and gesture_reader.
+-- Gesture overrides (koreader/settings/gestures.lua), applied to both gesture_fm and gesture_reader
+-- on first run.
 return {
     -- KOReader toggles the frontlight on a bottom-left corner tap; the Kindle doesn't.
     tap_left_bottom_corner = {},

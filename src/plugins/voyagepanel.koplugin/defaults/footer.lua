@@ -1,5 +1,5 @@
--- Kindle-style footer settings (merged into settings.reader.lua's ["footer"] table).
--- Item text comes from src/patches/2-kindle-footer.lua.
+-- Kindle-style footer settings, merged into settings.reader.lua's ["footer"] table on first run.
+-- Item text comes from patches/2-kindle-footer.lua. Off-Kindle the font is Primer's Inter.
 return {
     all_at_once          = true,  -- show every enabled item together, not one per tap
     page_progress        = true,
@@ -19,4 +19,3 @@ return {
     -- Item order (0-based, as KOReader stores it); unlisted items follow.
     order = { [0] = "off", "page_progress", "dynamic_filler", "percentage" },
 }
--- Also at the top level of settings.reader.lua: reader_footer_mode = 1 (footer visible).
