@@ -31,6 +31,13 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - Font: Font Family list (Kindle and sideloaded fonts, each shown in its own face), Bold 1–5, Size 1–14 (KOReader 22 = Kindle 4).
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
+- [x] **Toolbar ⋮ and Aa refinements** (2026-10-10). Confirmed by user.
+  - ⋮ opens a Kindle-style dropdown under the button (Notebook, Reading Statistics) instead of a popup; Book description and Rotate removed. Any other tap closes it.
+  - Reading Statistics: a card with the book, a progress bar ("Page X of Y", "N% read") and a two-column grid: time left in book, time spent reading, days reading, average per day, pages read, highlights · notes, started, estimated finish. Times need KOReader's statistics plugin (dash otherwise).
+  - Aa Size and Bold show the new step at once and apply 1 s after the last tap, so stepping several sizes costs one re-layout (also applied on closing the panel).
+  - Bigger size steps: 14, 16, 19, 22, 25, 29, 33, 38, 44, 51, 59, 68, 78, 90; Size 4 = KOReader 22, about 15% apart above it (was 16–58).
+  - No re-layout icons in the top-left corner after a font or layout change (KOReader's partial-rerendering indicator); the fast chapter-first re-layout is kept.
+  - Pinch / spread move one Aa size step (up to three for a long pinch) instead of by pinch distance, with a "Size N" note (the Aa step) instead of KOReader's raw size.
 
 ### Settings
 - [x] **Kindle-style Settings** (`settings.lua`, modeled on `design/reference/kindle-settings-screenshot.png`). Opens from the quick panel's All Settings, the toolbar's settings and the library header; KOReader's full menu stays behind ⋮ (and Advanced > All KOReader settings). Confirmed by user.
@@ -82,6 +89,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 
 - [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Apply with `tools/apply-gestures.py`. Confirmed by user.
+- [x] **Tapping the bottom of the page turns it** instead of opening KOReader's settings bar (2026-10-10). Confirmed by user.
 - [x] **Quick panel opens on swipe release**, so the rest of the opening swipe can't drag the brightness slider. Confirmed by user.
 
 - [x] **Library refinements** (2026-10-10): header shows time • date (follows 12/24 h, refreshed each minute) instead of the device name; Wi-Fi icon only when wireless is on, nothing when off; slim footer with "Page N of M" on the right; per-book progress after the dots ("23%" while reading, "read" when finished, nothing if unopened), replacing the margin tag. Confirmed by user.

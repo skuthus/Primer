@@ -14,6 +14,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local Notification = require("ui/widget/notification")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -25,9 +26,12 @@ local TABS = { "themes", "font", "layout", "more" }
 local TAB_LABELS = { themes = _("Themes"), font = _("Font"), layout = _("Layout"), more = _("More") }
 local TAB_X = { 57, 258, 406, 592 } -- label positions on the Voyage's 1072px screen
 
--- Kindle's 5 bold steps and 14 size steps, mapped to KOReader values.
+-- Kindle's 5 bold steps and 14 size steps, mapped to KOReader values. Size 4 is KOReader's
+-- 22 (the default); from there each step is about 15% larger, so each one is a visible change.
 local WEIGHTS = { 0, 0.5, 1, 1.5, 3 }
-local SIZES = { 16, 18, 20, 22, 24, 26, 28, 31, 34, 38, 42, 47, 52, 58 }
+local SIZES = { 14, 16, 19, 22, 25, 29, 33, 38, 44, 51, 59, 68, 78, 90 }
+-- Size and Bold changes wait this long after the last tap, since each one re-lays out the book.
+local APPLY_DELAY_S = 1
 local MARGINS = { { h = 15, t = 15 }, { h = 30, t = 30 }, { h = 50, t = 40 } }
 local SPACINGS = { 100, 115, 135 }
 
@@ -72,6 +76,22 @@ end
 local AaPanel = InputContainer:extend{
     plugin = nil,
 }
+
+-- Like ReaderFont:onSetFontSize, minus its "Font size set to: 22" note: Primer speaks in steps.
+local function setFontSize(ui, size)
+    ui.document.configurable.font_size = size
+    ui.document:setFontSize(Screen:scaleBySize(size))
+    ui:handleEvent(Event:new("UpdatePos"))
+    G_reader_settings:saveSetting("copt_font_size", size)
+end
+
+-- Move the open book's font size by `delta` of the panel's steps (used by pinch and spread).
+function AaPanel.stepFontSize(ui, delta)
+    local conf = ui.document.configurable
+    local i = math.max(1, math.min(#SIZES, nearest(SIZES, conf.font_size or 22) + delta))
+    if SIZES[i] ~= conf.font_size then setFontSize(ui, SIZES[i]) end
+    Notification:notify(string.format(_("Size %d"), i))
+end
 
 function AaPanel:init()
     self.ui = self.plugin.ui
@@ -126,6 +146,13 @@ function AaPanel:current()
         h = h,
         t = conf.t_page_margin or 30,
     }
+end
+
+-- Current settings with any queued Size / Bold change on top, for drawing.
+function AaPanel:shown()
+    local cur = self:current()
+    for k, v in pairs(self.pending or {}) do cur[k] = v end
+    return cur
 end
 
 function AaPanel:text(str, f, max_width)
@@ -243,7 +270,7 @@ end
 
 function AaPanel:paintThemes(bb, x, y)
     local u, cy0 = self.u, y + self.content_y
-    local cur = self:current()
+    local cur = self:shown()
     local items = self:themes()
     local selected
     for i, t in ipairs(items) do
@@ -320,7 +347,7 @@ function AaPanel:saveTheme()
                 local name = dialog:getInputText()
                 UIManager:close(dialog)
                 if name and name:match("%S") then
-                    local cur = self:current()
+                    local cur = self:shown()
                     cur.name = name
                     local themes = G_reader_settings:readSetting("voyage_themes") or {}
                     table.insert(themes, cur)
@@ -421,7 +448,7 @@ end
 
 function AaPanel:paintFont(bb, x, y)
     local u, cy0 = self.u, self.content_y
-    local cur = self:current()
+    local cur = self:shown()
     local divider = function(dy) bb:paintRect(x + round(62 * u), y + dy, round(946 * u), self.line, Blitbuffer.COLOR_BLACK) end
 
     -- Font Family
@@ -445,7 +472,7 @@ function AaPanel:paintFont(bb, x, y)
     local b = self:text(_("Bold"), self.face_text)
     b:paintTo(bb, x + round(62 * u), y + bold_cy - round(b:getSize().h / 2))
     self:paintSteps(bb, x, y, bold_cy, #WEIGHTS, nearest(WEIGHTS, cur.weight), round(90 * u), round(10 * u),
-        function(i) self:apply{ weight = WEIGHTS[i] } end)
+        function(i) self:queue{ weight = WEIGHTS[i] } end)
     divider(cy0 + round(336 * u))
 
     -- Size
@@ -453,7 +480,7 @@ function AaPanel:paintFont(bb, x, y)
     local s = self:text(_("Size"), self.face_text)
     s:paintTo(bb, x + round(62 * u), y + size_cy - round(s:getSize().h / 2))
     self:paintSteps(bb, x, y, size_cy, #SIZES, nearest(SIZES, cur.size), round(26 * u), round(10 * u),
-        function(i) self:apply{ size = SIZES[i] } end)
+        function(i) self:queue{ size = SIZES[i] } end)
 end
 
 -- Layout ---------------------------------------------------------------------------
@@ -465,7 +492,7 @@ end
 
 function AaPanel:paintLayout(bb, x, y)
     local u, cy0 = self.u, self.content_y
-    local cur = self:current()
+    local cur = self:shown()
     local thin, thickb = self.line, round(5 * u)
     local L = math.max(1, round(2 * u))
     local function label(str, lx, ly)
@@ -637,16 +664,32 @@ end
 
 -- Applying settings ----------------------------------------------------------------
 
--- Apply to the open book and save as the default for all books.
+-- Size and Bold: show the new step at once, apply once the taps stop.
+function AaPanel:queue(s)
+    self.pending = self.pending or {}
+    for k, v in pairs(s) do self.pending[k] = v end
+    self:refresh()
+    self.commit_task = self.commit_task or function() self:apply{} end
+    UIManager:unschedule(self.commit_task)
+    UIManager:scheduleIn(APPLY_DELAY_S, self.commit_task)
+end
+
+-- Apply to the open book (with anything queued) and save as the default for all books.
 function AaPanel:apply(s)
+    if self.pending then
+        UIManager:unschedule(self.commit_task)
+        local merged = self.pending
+        self.pending = nil
+        for k, v in pairs(s) do merged[k] = v end
+        s = merged
+    end
     local ui, conf = self.ui, self.ui.document.configurable
     if s.font and s.font ~= ui.font.font_face then
         ui.font:onSetFont(s.font)
         G_reader_settings:saveSetting("cre_font", s.font)
     end
     if s.size and s.size ~= conf.font_size then
-        ui.font:onSetFontSize(s.size)
-        G_reader_settings:saveSetting("copt_font_size", s.size)
+        setFontSize(ui, s.size)
     end
     if s.weight and s.weight ~= conf.font_base_weight then
         ui.font:onSetFontBaseWeight(s.weight)
@@ -667,7 +710,7 @@ function AaPanel:apply(s)
         G_reader_settings:saveSetting("copt_h_page_margins", { nh, nh })
         G_reader_settings:saveSetting("copt_t_page_margin", nt)
     end
-    self:refresh()
+    if not self.closed then self:refresh() end
 end
 
 function AaPanel:applyTheme(t)
@@ -741,6 +784,8 @@ function AaPanel:onClose()
 end
 
 function AaPanel:onCloseWidget()
+    self.closed = true
+    if self.pending then self:apply{} end
     for __, w in pairs(self.cache) do w:free() end
     self.cache = {}
     self.plugin.aapanel = nil

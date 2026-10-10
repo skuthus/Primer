@@ -24,6 +24,7 @@ local GoTo = require("goto")
 local Lookup = require("lookup")
 local NotePopup = require("notes")
 local Notebook = require("notebook")
+local Stats = require("stats")
 local SettingsView = require("settings")
 local Fonts = require("fonts")
 local lfs = require("libs/libkoreader-lfs")
@@ -74,6 +75,54 @@ do
                 return true
             end
             return orig(self, ges)
+        end
+    end
+    -- Tapping the bottom of the page turns it, like the Kindle, instead of opening
+    -- KOReader's settings bar (returning nothing lets the tap reach the page-turn zones).
+    if not ReaderConfig._voyage_tap_hooked then
+        ReaderConfig._voyage_tap_hooked = true
+        local orig = ReaderConfig.onTapShowConfigMenu
+        function ReaderConfig:onTapShowConfigMenu(...)
+            if self.ui and self.ui.voyagepanel then return end
+            return orig(self, ...)
+        end
+    end
+end
+
+-- No re-layout icons in the top-left corner after a font or layout change (the Kindle shows
+-- none). KOReader still re-lays out the current chapter first and the rest in the background.
+do
+    local ReaderFlipping = require("apps/reader/modules/readerflipping")
+    if not ReaderFlipping._voyage_hooked then
+        ReaderFlipping._voyage_hooked = true
+        local orig = ReaderFlipping.getRollingRenderingStateIconWidget
+        function ReaderFlipping:getRollingRenderingStateIconWidget(...)
+            if self.ui and self.ui.voyagepanel then return nil end
+            return orig(self, ...)
+        end
+    end
+end
+
+-- Pinch and spread step through the Aa panel's font sizes instead of by pinch distance.
+do
+    local ReaderFont = require("apps/reader/modules/readerfont")
+    if not ReaderFont._voyage_hooked then
+        ReaderFont._voyage_hooked = true
+        local orig_inc, orig_dec = ReaderFont.onIncreaseFontSize, ReaderFont.onDecreaseFontSize
+        local function step(self, ges, dir)
+            -- A long pinch moves up to three steps.
+            local span = math.min(Screen:getWidth(), Screen:getHeight())
+            local n = math.min(3, 1 + math.floor((ges.distance or 0) / (span * 0.5)))
+            AaPanel.stepFontSize(self.ui, dir * n)
+            return true
+        end
+        function ReaderFont:onIncreaseFontSize(ges)
+            if type(ges) ~= "table" or not self.ui.voyagepanel then return orig_inc(self, ges) end
+            return step(self, ges, 1)
+        end
+        function ReaderFont:onDecreaseFontSize(ges)
+            if type(ges) ~= "table" or not self.ui.voyagepanel then return orig_dec(self, ges) end
+            return step(self, ges, -1)
         end
     end
 end
@@ -342,6 +391,17 @@ function VoyagePanel:icon(name, size)
     return IconWidget:new{ file = self.path .. "/icons/" .. name .. ".svg", width = size, height = size }
 end
 
+-- "1 min", "15 mins", "1 hr 5 mins"
+function VoyagePanel.minutesText(minutes)
+    if minutes < 60 then
+        return minutes == 1 and _("1 min") or string.format(_("%d mins"), minutes)
+    end
+    local h, m = math.floor(minutes / 60), minutes % 60
+    local hours = h == 1 and _("1 hr") or string.format(_("%d hrs"), h)
+    if m == 0 then return hours end
+    return hours .. " " .. (m == 1 and _("1 min") or string.format(_("%d mins"), m))
+end
+
 function VoyagePanel:showToolbar()
     if self.toolbar then return end
     local ok, err = pcall(function()
@@ -411,6 +471,19 @@ function VoyagePanel:showNotebook(filter)
 end
 
 -- Go To: Kindle-style chapter list.
+function VoyagePanel:showStats()
+    if self.stats or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.stats = Stats:new{ plugin = self }
+        UIManager:show(self.stats)
+    end)
+    if not ok then
+        logger.err("VoyageStats: failed to open:", err)
+        self.stats = nil
+        UIManager:show(InfoMessage:new{ text = "Reading statistics error:\n" .. tostring(err) })
+    end
+end
+
 function VoyagePanel:showGoTo()
     if self.goto_view or not self.ui.document then return end
     local ok, err = pcall(function()
