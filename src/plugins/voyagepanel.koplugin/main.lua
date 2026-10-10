@@ -24,6 +24,7 @@ local GoTo = require("goto")
 local Lookup = require("lookup")
 local NotePopup = require("notes")
 local Notebook = require("notebook")
+local SettingsView = require("settings")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -431,7 +432,7 @@ function VoyagePanel:showTextSettings()
 end
 
 function VoyagePanel:offerUsbMode()
-    if self.usb_dialog then return end
+    if self.usb_dialog or not G_reader_settings:nilOrTrue("voyage_usb_prompt") then return end
     self.usb_dialog = Dialog:new{
         title = _("Connect to Computer"),
         text = _("Use your Kindle as a USB drive? KOReader will close while it's connected and come back when you eject it."),
@@ -569,6 +570,7 @@ function VoyagePanel:onCloseWidget()
     if self.lookup then UIManager:close(self.lookup) end
     if self.note_popup then UIManager:close(self.note_popup) end
     if self.notebook then UIManager:close(self.notebook) end
+    if self.settings_view then UIManager:close(self.settings_view) end
 end
 
 function VoyagePanel:showPanel()
@@ -603,11 +605,18 @@ function VoyagePanel:sync()
     end
 end
 
+-- Kindle-style Settings (KOReader's full menu stays behind its ⋮).
 function VoyagePanel:openAllSettings()
-    if self.ui.document and G_reader_settings:nilOrTrue("show_bottom_menu") then
-        self.ui:handleEvent(Event:new("ShowConfigMenu"))
+    if self.settings_view then return end
+    local ok, err = pcall(function()
+        self.settings_view = SettingsView:new{ plugin = self }
+        UIManager:show(self.settings_view)
+    end)
+    if not ok then
+        logger.err("VoyageSettings: failed to open:", err)
+        self.settings_view = nil
+        UIManager:show(InfoMessage:new{ text = "Settings error:\n" .. tostring(err) })
     end
-    self.ui.menu:onShowMenu()
 end
 
 return VoyagePanel

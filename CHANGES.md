@@ -32,6 +32,11 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
 
+### Settings
+- [x] **Kindle-style Settings** (`settings.lua`, modeled on `design/reference/kindle-settings-screenshot.png`). Opens from the quick panel's All Settings, the toolbar's settings and the library header; KOReader's full menu stays behind ⋮ (and Advanced > All KOReader settings). Confirmed by user.
+  - Kumba (rename) · Wi-Fi (wireless toggle, networks) · Device options (battery, sleep after, start with last book/library, ask to connect to a computer, swap page-turn buttons, restart KOReader) · Screen and brightness (brightness panel, auto brightness, dark mode, full page refresh never/20/40, chapter refresh, sleep screen illustrations/cover/none) · Reading (Aa, reading progress, clock, highlight menu) · Home and Library (Kindle-style library, sort) · Advanced (KOReader menu, SSH server) · About.
+  - Rows: icon, bold title, subtitle (current value for choices), ›, switches for toggles; choices open a pick-one list with a check mark. ‹ title, swipe right or Back go up a level; chevron or ✕ close.
+
 ### Dictionary
 - [x] **Kindle-style dictionary.** (Installed 2026-10-10; confirmed by user.) Modeled on `design/reference/kindle-dictionary-photo.webp`.
   - Dictionary: English-English Wiktionary (462k entries, CC BY-SA, github.com/Vuizur/Wiktionary-Dictionaries, the source KOReader's catalog uses) in `koreader/data/dict/`. The Voyage's built-in Oxford dictionaries are DRM-protected Amazon files KOReader can't read.

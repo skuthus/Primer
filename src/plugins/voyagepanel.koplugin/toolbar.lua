@@ -289,7 +289,7 @@ function Toolbar:act(id)
         end
     elseif id == "settings" then
         self:onClose()
-        ui.menu:onShowMenu()
+        self.plugin:openAllSettings()
     elseif id == "search" then
         self:onClose()
         ui.search:onShowFulltextSearchInput()
