@@ -123,7 +123,7 @@ function Library:init()
         if Device.input.group.PgBack then self.key_events.PrevPage = { { Device.input.group.PgBack } } end
     end
 
-    self.face_header = Fonts.face("ui_bold", 15)
+    self.face_header = Fonts.face("ui_bold", 20)
     self.face_status = Fonts.face("ui", 12)
     self.face_sub = Fonts.face("ui_bold", 14)
     self.face_title = Fonts.face("slab", 19)
@@ -131,6 +131,7 @@ function Library:init()
     self.face_tag = Fonts.face("ui", 12)
     self.face_badge = Fonts.face("ui_bold", 10)
     self.face_footer = Fonts.face("ui", 14)
+    self.face_search = Fonts.face("ui", 17)
     self.face_menu = Fonts.face("ui", 17)
 
     self:scan()
@@ -269,23 +270,29 @@ function Library:layout()
     local pad = round(W * 0.045)
     self.pad = pad
 
-    -- Header bar
-    self.bar = Geom:new{ x = round(W * 0.02), y = round(W * 0.02), w = W - round(W * 0.04), h = round(W * 0.058) }
-    -- Subheader: item count and sort
-    self.sub_y = self.bar.y + self.bar.h + round(W * 0.022)
+    -- Striped bands: a shaded header, the books (shaded every other row) and the footer at the
+    -- bottom. The book rows share the space between the slim subheader and the footer exactly
+    -- (as many as fit at about a header's height), so there's no gap anywhere.
+    local band = round(W * 0.098)
+    self.bar = Geom:new{ x = 0, y = 0, w = W, h = band }
+    self.bar_icon = round(W * 0.058) -- header icons keep the size they had in the old, slimmer bar
     local sub_h = self:text("Ag", self.face_sub):getSize().h
+    self.sub_y = band + round(W * 0.022)
+    self.list_y = self.sub_y + sub_h + round(W * 0.025)
+    local space = H - band - self.list_y
+    self.per_page = math.max(1, math.floor(space / band + 0.5))
+    self.row_h = math.floor(space / self.per_page)
+    self.footer_top = self.list_y + self.per_page * self.row_h
+    self.footer_h = H - self.footer_top
+    self.rule = math.max(2, round(W * 0.0028))
+    -- The footer continues the stripes: shaded when the last book row is white.
+    self.footer_shaded = self.per_page % 2 == 0
     local sort_w = self:text(SORT_LABELS[self.sort], self.face_sub):getSize().w
     self.sort_hit = Geom:new{ x = W - pad - sort_w - round(W * 0.05), y = self.sub_y - round(W * 0.02),
         w = sort_w + round(W * 0.05) + pad, h = sub_h + round(W * 0.04) }
-
-    -- Rows fill the space between subheader and a slim footer.
-    self.footer_h = round(W * 0.064)
-    self.footer_top = H - self.footer_h
-    self.search_hit = Geom:new{ x = 0, y = self.footer_top, w = round(W * 0.6), h = self.footer_h }
     self.filter_hit = Geom:new{ x = 0, y = self.sub_y - round(W * 0.02), w = self.sort_hit.x, h = sub_h + round(W * 0.04) }
-    self.list_y = self.sub_y + sub_h + round(W * 0.025)
-    self.row_h = round(W * 0.098)
-    self.per_page = math.max(1, math.floor((self.footer_top - round(W * 0.01) - self.list_y) / self.row_h))
+    self.footer_icon = round(W * 0.064 * 0.55)
+    self.search_hit = Geom:new{ x = 0, y = self.footer_top, w = round(W * 0.6), h = self.footer_h }
     self.pages = math.max(1, math.ceil(#self.books / self.per_page))
     self.page = math.min(self.page, self.pages)
 
@@ -308,7 +315,7 @@ end
 
 function Library:paintBattery(bb, right, cy)
     local powerd = Device:getPowerDevice()
-    local h = round(self.bar.h * 0.36)
+    local h = round(self.bar_icon * 0.36)
     local w = round(h * 2.1)
     local border = math.max(2, round(self.width * 0.002))
     local x = right - w - border
@@ -325,18 +332,20 @@ end
 
 function Library:paintHeader(bb, x, y)
     local W, bar = self.width, self.bar
-    bb:paintRoundedRect(x + bar.x, y + bar.y, bar.w, bar.h, Blitbuffer.COLOR_LIGHT_GRAY, round(bar.h * 0.25))
+    bb:paintRect(x + bar.x, y + bar.y, bar.w, bar.h, Blitbuffer.COLOR_GRAY_D)
+    -- A firm rule closes the header off from the list (the footer gets the same one).
+    bb:paintRect(x + bar.x, y + bar.y + bar.h - self.rule, bar.w, self.rule, Blitbuffer.COLOR_BLACK)
     local cy = y + bar.y + round(bar.h / 2)
     local now = os.time()
     local stamp = datetime.secondsToHour(now, G_reader_settings:isTrue("twelve_hour_clock"))
         .. "  •  " .. os.date("%d %b %Y", now):gsub("^0", "")
     local clock = TextWidget:new{ text = stamp, face = self.face_header }
-    clock:paintTo(bb, x + bar.x + round(W * 0.025), cy - round(clock:getSize().h / 2))
+    clock:paintTo(bb, x + self.pad, cy - round(clock:getSize().h / 2))
     clock:free()
-    local right = self:paintBattery(bb, x + bar.x + bar.w - round(W * 0.025), cy)
+    local right = self:paintBattery(bb, x + W - self.pad, cy)
     if self.plugin:isWirelessOn() then
-        local s = round(bar.h * 0.55)
-        local wifi = self.plugin:icon("s-wifi", s)
+        local s = round(self.bar_icon * 0.55)
+        local wifi = self.plugin:icon("s-wifi", s, true)
         wifi:paintTo(bb, right - round(W * 0.02) - s, cy - round(s / 2))
         wifi:free()
     end
@@ -375,25 +384,29 @@ function Library:paintLibrary(bb, x, y)
     -- Rows
     local first = (self.page - 1) * self.per_page + 1
     for i = first, math.min(first + self.per_page - 1, count) do
-        self:paintRow(bb, x, y + self.list_y + (i - first) * self.row_h, self.books[i], i == self.pressed)
+        self:paintRow(bb, x, y + self.list_y + (i - first) * self.row_h, self.books[i], i == self.pressed, (i - first) % 2 == 0)
     end
 
-    -- Footer: slim rule, Search on the left, page position on the right.
-    bb:paintRect(x, y + self.footer_top, W, math.max(1, round(W * 0.0015)), Blitbuffer.COLOR_LIGHT_GRAY)
+    -- Footer: a row-height band (shaded when the stripes call for it), Search on the left,
+    -- page position on the right.
+    if self.footer_shaded then
+        bb:paintRect(x, y + self.footer_top, W, self.footer_h, Blitbuffer.COLOR_GRAY_D)
+    end
+    bb:paintRect(x, y + self.footer_top, W, self.rule, Blitbuffer.COLOR_BLACK)
     local fy = y + self.footer_top + round(self.footer_h / 2)
-    local is = round(self.footer_h * 0.42)
+    local is = self.footer_icon
     local label
     if self.filter == "trash" and not self.query then
         label = count > 0 and _("Empty Trash") or nil
     else
-        local icon = self.plugin:icon(self.query and "close" or "search", is)
+        local icon = self.plugin:icon(self.query and "close" or "search", is, true)
         icon:paintTo(bb, x + pad, fy - round(is / 2))
         icon:free()
         label = self.query and string.format(_("Clear “%s”"), self.query) or _("Search")
     end
     if label then
         local lx = x + pad + ((self.filter == "trash" and not self.query) and 0 or (is + round(W * 0.015)))
-        local search = self:text(label, self.face_footer, round(W * 0.45))
+        local search = self:text(label, self.face_search, round(W * 0.45))
         search:paintTo(bb, lx, fy - round(search:getSize().h / 2))
     end
     local footer = self:text(string.format(_("Page %d of %d"), self.page, self.pages), self.face_footer)
@@ -433,8 +446,10 @@ function Library:paintFilterMenu(bb, x, y)
     self.menu_row_h = row_h
 end
 
-function Library:paintRow(bb, x, row_y, book, pressed)
+function Library:paintRow(bb, x, row_y, book, pressed, striped)
     local W, pad = self.width, self.pad
+    -- Every other row is lightly shaded, like Finder's lists, so rows are easy to follow.
+    if striped then bb:paintRect(x, row_y, W, self.row_h, Blitbuffer.COLOR_GRAY_D) end
     local info = BookList.getBookInfo(book.file)
     local finished = info.been_opened and info.status == "complete"
     local percent = finished and 1 or (info.percent_finished or 0)

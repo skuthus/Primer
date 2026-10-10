@@ -115,12 +115,14 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Four more sleep screen collections**, chosen in Settings > Screen and brightness > Sleep screen (alongside Kindle illustrations, Book cover, None): Doré engravings (Inferno, Paradise Lost), Tenniel's Alice, Japanese woodblocks (Hiroshige's Hundred Famous Views of Edo), Haeckel's nature forms. 15 images each, public domain from Wikimedia Commons, 1072×1448 greyscale JPEG, scaled to fill the screen and centre-cropped (no white bars; Hiroshige zoomed a little more to trim paper margins), 38 MB in all, installed to `koreader/screensavers/primer/`; sources in `src/screensavers/CREDITS.md`.
 
 ### Gestures
-- [x] **Refresh the screen on demand** (2026-10-10, confirmed by user): a two-finger tap anywhere (fingers close together; the wide corner-to-corner tap is still a screenshot), or holding a page-turn button for about a second. Holding a page button no longer flips pages rapidly. Works on every screen (handled where input arrives).
+- [x] **Refresh the screen on demand** (2026-10-10, confirmed by user): a two-finger tap anywhere (fingers close together; the wide corner-to-corner tap is still a screenshot). Works on every screen (handled where input arrives). (A held page-turn button as a refresh was tried and removed: it didn't work on the Voyage.)
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 
 - [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Applied by the first-run setup. Confirmed by user.
 - [x] **Tapping the bottom of the page turns it** instead of opening KOReader's settings bar (2026-10-10). Confirmed by user.
 - [x] **Quick panel opens on swipe release**, so the rest of the opening swipe can't drag the brightness slider. Confirmed by user.
+
+- [x] **Striped library rows** (2026-10-10, confirmed by user): every other book in the list has a light grey background (starting with the first row), like Finder's lists. The footer now starts right under the last row (no gap). The header (larger bold time and date), book rows and footer are row-height bands striped evenly top to bottom (the footer shaded when the last row is white); the "Showing…" subheader stays a slim white line; the footer is one row tall, right under the last row. Footer Search icon and label enlarged; icons on shaded bands keep their transparency (no white box). A firm black rule under the header and over the footer frames the list.
 
 - [x] **Library refinements** (2026-10-10): header shows time • date (follows 12/24 h, refreshed each minute) instead of the device name; Wi-Fi icon only when wireless is on, nothing when off; slim footer with "Page N of M" on the right; per-book progress after the dots ("23%" while reading, "read" when finished, nothing if unopened), replacing the margin tag. Confirmed by user.
 

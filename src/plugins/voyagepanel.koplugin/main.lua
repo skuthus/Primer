@@ -253,44 +253,19 @@ do
     end
 end
 
--- Refresh the screen on demand, anywhere in Primer:
---   * a two-finger tap (fingers close together; KOReader's wide corner-to-corner tap stays a screenshot),
---   * holding a page-turn button for about a second. Holding no longer flips pages rapidly
---     (a Kindle doesn't), so the key repeats it sends are used for this instead.
+-- Refresh the screen on demand, anywhere in Primer: a two-finger tap (fingers close together;
+-- KOReader's wide corner-to-corner tap stays a screenshot).
 do
     if not UIManager._voyage_refresh_hooked then
         UIManager._voyage_refresh_hooked = true
-        local time = require("ui/time")
-        local PAGE_KEYS = { LPgBack = true, LPgFwd = true, RPgBack = true, RPgFwd = true }
-        local HOLD_MS = 900
-        local pressed_at, refreshed
-
-        local function fullRefresh()
-            UIManager:setDirty(nil, "full")
-        end
-
         local orig = UIManager.handleInputEvent
         function UIManager:handleInputEvent(input_event)
-            local handler = type(input_event) == "table" and input_event.handler
-            local arg = handler and input_event.args and input_event.args[1]
-            if handler == "onGesture" and arg and arg.ges == "two_finger_tap" then
-                local span = arg.span or 0
-                if span < math.min(Screen:getWidth(), Screen:getHeight()) * 0.5 then
-                    fullRefresh()
-                    return
-                end
-            elseif type(arg) == "table" and PAGE_KEYS[arg.key] then
-                if handler == "onKeyPress" then
-                    pressed_at, refreshed = time.now(), false
-                elseif handler == "onKeyRepeat" then
-                    if pressed_at and not refreshed and time.to_ms(time.now() - pressed_at) >= HOLD_MS then
-                        refreshed = true
-                        fullRefresh()
-                    end
-                    return -- no rapid page flipping while held
-                elseif handler == "onKeyRelease" then
-                    pressed_at = nil
-                end
+            local arg = type(input_event) == "table" and input_event.handler == "onGesture"
+                and input_event.args and input_event.args[1]
+            if arg and arg.ges == "two_finger_tap"
+                    and (arg.span or 0) < math.min(Screen:getWidth(), Screen:getHeight()) * 0.5 then
+                UIManager:setDirty(nil, "full")
+                return
             end
             return orig(self, input_event)
         end
@@ -672,8 +647,9 @@ function VoyagePanel:paintBattery(bb, right, cy, h)
     return x
 end
 
-function VoyagePanel:icon(name, size)
-    return IconWidget:new{ file = self.path .. "/icons/" .. name .. ".svg", width = size, height = size }
+-- `alpha`: keep the icon's transparency, for icons drawn on a shaded background.
+function VoyagePanel:icon(name, size, alpha)
+    return IconWidget:new{ file = self.path .. "/icons/" .. name .. ".svg", width = size, height = size, alpha = alpha }
 end
 
 -- "1 min", "15 mins", "1 hr 5 mins"
