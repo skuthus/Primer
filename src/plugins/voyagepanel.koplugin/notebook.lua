@@ -7,8 +7,7 @@ edit its note or delete it.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -20,18 +19,10 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-local SERIF = "/usr/java/lib/fonts/Bookerly-Regular.ttf"
 
 local FILTERS = { "all", "highlight", "note", "bookmark" }
 local FILTER_LABELS = { all = _("All"), highlight = _("Highlights"), note = _("Notes"), bookmark = _("Bookmarks") }
 local TYPE_LABELS = { highlight = _("Highlight"), note = _("Note"), bookmark = _("Bookmark") }
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -74,14 +65,14 @@ function Notebook:init()
         if Device.input.group.Back then self.key_events.Close = { { Device.input.group.Back } } end
     end
 
-    self.face_header = face(EMBER_BOLD, 21)
-    self.face_title = face(EMBER, 15)
-    self.face_tab = face(EMBER, 17)
-    self.face_tab_on = face(EMBER_BOLD, 17)
-    self.face_meta = face(EMBER_BOLD, 14)
-    self.face_text = face(SERIF, 17)
-    self.face_note = face(EMBER, 16)
-    self.face_small = face(EMBER, 14)
+    self.face_header = Fonts.face("ui_bold", 21)
+    self.face_title = Fonts.face("ui", 15)
+    self.face_tab = Fonts.face("ui", 17)
+    self.face_tab_on = Fonts.face("ui_bold", 17)
+    self.face_meta = Fonts.face("ui_bold", 14)
+    self.face_text = Fonts.face("serif", 17)
+    self.face_note = Fonts.face("ui", 16)
+    self.face_small = Fonts.face("ui", 14)
 
     local u = self.u
     self.pad = round(53 * u)

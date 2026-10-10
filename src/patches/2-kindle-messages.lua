@@ -1,4 +1,4 @@
--- Kindle-style message boxes: Amazon Ember, no info icon, short messages centered,
+-- Kindle-style message boxes: Amazon Ember (Inter off-Kindle), no info icon, short messages centered,
 -- and no "Opening file" box at all.
 -- Warning/error icons and boxes that bring their own face or image are left alone.
 
@@ -6,8 +6,10 @@ local Font = require("ui/font")
 local InfoMessage = require("ui/widget/infomessage")
 local lfs = require("libs/libkoreader-lfs")
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local has_ember = lfs.attributes(EMBER, "mode") == "file"
+-- Amazon Ember on Kindles, else Inter bundled with Primer (koreader/fonts/primer).
+local UI_FONT = lfs.attributes("/usr/java/lib/fonts/Amazon-Ember-Regular.ttf", "mode") == "file"
+    and "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
+    or (lfs.attributes("./fonts/primer/Inter-Regular.ttf", "mode") == "file" and "primer/Inter-Regular.ttf" or nil)
 
 -- KOReader's "Opening file '…'" box: the Kindle shows nothing while a book opens.
 local _ = require("gettext")
@@ -21,8 +23,8 @@ function InfoMessage:init()
     if self.icon == "notice-info" and not self.image then
         self.show_icon = false
     end
-    if has_ember and not self.face and not self.monospace_font then
-        self.face = Font:getFace(EMBER, 20)
+    if UI_FONT and not self.face and not self.monospace_font then
+        self.face = Font:getFace(UI_FONT, 20)
     end
     if self.alignment == "left" and type(self.text) == "string" and #self.text < 120 then
         self.alignment = "center"

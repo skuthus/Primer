@@ -25,8 +25,8 @@ local Lookup = require("lookup")
 local NotePopup = require("notes")
 local Notebook = require("notebook")
 local SettingsView = require("settings")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
+local lfs = require("libs/libkoreader-lfs")
 local TextWidget = require("ui/widget/textwidget")
 local datetime = require("datetime")
 local Screen = Device.screen
@@ -262,6 +262,11 @@ local function luxToLevel(lux, lo, hi)
 end
 
 function VoyagePanel:init()
+    -- Off-Kindle, the footer's Amazon Ember setting points nowhere: use Primer's bundled UI font.
+    local footer = G_reader_settings:readSetting("footer")
+    if footer and footer.text_font_face and not lfs.attributes(footer.text_font_face, "mode") then
+        footer.text_font_face = Fonts.path("ui")
+    end
     self.auto_tick = function() self:autoTick() end
     self.auto = G_reader_settings:isTrue("voyage_auto_brightness") and self:hasLightSensor()
     if self.auto then
@@ -279,7 +284,7 @@ function VoyagePanel:init()
 end
 
 function VoyagePanel:deviceName()
-    return G_reader_settings:readSetting("voyage_device_name") or "Kindle Voyage"
+    return G_reader_settings:readSetting("voyage_device_name") or Device.model or "Primer"
 end
 
 local function wirelessHandle()
@@ -298,12 +303,14 @@ function VoyagePanel:isWirelessOn()
     return NetworkMgr:isWifiOn()
 end
 
--- Flip the wireless radio like the Kindle's airplane mode: no connection attempt, no
--- network list, no popups. The Kindle's own wifid rejoins saved networks by itself.
--- Returns false when lipc isn't available (non-Kindle), so callers can fall back.
+-- Wireless on/off. On a Kindle, flip the radio like its airplane mode: no connection attempt,
+-- network list or popups (its own wifid rejoins saved networks). Elsewhere, KOReader's Wi-Fi toggle.
 function VoyagePanel:setWireless(on)
     local handle = wirelessHandle()
-    if not handle then return false end
+    if not handle then
+        if on then NetworkMgr:toggleWifiOn() else NetworkMgr:toggleWifiOff() end
+        return
+    end
     if on then
         handle:set_int_property("com.lab126.cmd", "wirelessEnable", 1)
         handle:set_int_property("com.lab126.wifid", "enable", 1)
@@ -312,7 +319,7 @@ function VoyagePanel:setWireless(on)
         handle:set_int_property("com.lab126.cmd", "wirelessEnable", 0)
     end
     handle:close()
-    return true
+    if not on then UIManager:broadcastEvent(Event:new("NetworkDisconnected")) end
 end
 
 -- A drawn battery whose right edge (with nub) sits at `right`; returns its left x.
@@ -528,8 +535,7 @@ function VoyagePanel:onResume()
 end
 
 function VoyagePanel:paintClock(bb, x, y)
-    local file = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-    local f = FontChooser.isFontRegistered(file) and Font:getFace(file, 14) or Font:getFace("ffont", 14)
+    local f = Fonts.face("ui_bold", 14)
     local w = TextWidget:new{ text = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock")), face = f }
     local size = w:getSize()
     local margin = Screen:scaleBySize(self.ui.document.configurable.t_page_margin or 30)

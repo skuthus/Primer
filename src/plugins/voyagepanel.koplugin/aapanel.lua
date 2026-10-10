@@ -9,7 +9,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -20,9 +20,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-local EMBER_ITALIC = "/usr/java/lib/fonts/Amazon-Ember-RegularItalic.ttf"
 
 local TABS = { "themes", "font", "layout", "more" }
 local TAB_LABELS = { themes = _("Themes"), font = _("Font"), layout = _("Layout"), more = _("More") }
@@ -56,11 +53,6 @@ local FONT_NAMES = {
     ["Helvetica Neue LT 65 Kindle Medium"] = "Helvetica",
     ["Futura Medium"] = "Futura",
 }
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -104,14 +96,14 @@ function AaPanel:init()
         self.key_events.Close = close
     end
 
-    self.face_tab = face(EMBER, 18)
-    self.face_tab_on = face(EMBER_BOLD, 18)
-    self.face_text = face(EMBER, 18)
-    self.face_bold = face(EMBER_BOLD, 18)
-    self.face_small = face(EMBER, 14)
-    self.face_italic = face(EMBER_ITALIC, 17)
-    self.face_value = face(EMBER, 15)
-    self.face_sign = face(EMBER, 26)
+    self.face_tab = Fonts.face("ui", 18)
+    self.face_tab_on = Fonts.face("ui_bold", 18)
+    self.face_text = Fonts.face("ui", 18)
+    self.face_bold = Fonts.face("ui_bold", 18)
+    self.face_small = Fonts.face("ui", 14)
+    self.face_italic = Fonts.face("ui_italic", 17)
+    self.face_value = Fonts.face("ui", 15)
+    self.face_sign = Fonts.face("ui", 26)
 
     local u = self.u
     self.top_y = round(self.H * 0.4)
@@ -244,7 +236,7 @@ function AaPanel:paintThemeIcon(bb, bx, by, s, icon)
         self:pageIcon(bb, bx, by, s, s, self.thick, evenLines(3, 0.2, 0.8, round(5 * u)), round(9 * u))
     else
         bb:paintBorder(bx, by, s, s, self.thick, Blitbuffer.COLOR_BLACK, round(10 * u))
-        local a = self:text("A", face(EMBER, 22))
+        local a = self:text("A", Fonts.face("ui", 22))
         a:paintTo(bb, bx + round((s - a:getSize().w) / 2), by + round((s - a:getSize().h) / 2))
     end
 end
@@ -368,7 +360,14 @@ function AaPanel:fontList()
     local list = {}
     for __, name in ipairs(cre.getFontFaces()) do
         local file, index = cre.getFontFaceFilenameAndFaceIndex(name)
-        local hidden = not file or not (file:find("^/usr/java/lib/fonts/") or file:find("^/mnt/us/fonts/"))
+        -- On a Kindle, offer its own fonts and sideloaded ones (like the Kindle does); elsewhere,
+        -- whatever KOReader has, minus KOReader's UI/symbol fonts.
+        local hidden
+        if Device:isKindle() then
+            hidden = not file or not (file:find("^/usr/java/lib/fonts/") or file:find("^/mnt/us/fonts/"))
+        else
+            hidden = not file or file:find("nerdfonts", 1, true) ~= nil
+        end
         for __, pat in ipairs(HIDDEN_FONTS) do
             if name:find(pat, 1, true) then hidden = true end
         end

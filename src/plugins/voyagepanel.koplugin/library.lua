@@ -8,8 +8,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -22,9 +21,6 @@ local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local CAECILIA = "/usr/java/lib/fonts/Caecilia_LT_65_Medium.ttf"
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
 
 local SORTS = { "recent", "title", "author", "added" }
 local SORT_LABELS = {
@@ -33,11 +29,6 @@ local SORT_LABELS = {
     author = _("By Author"),
     added = _("By Newest Added"),
 }
-
-local function face(file, size, fallback)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace(fallback or "cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -116,12 +107,12 @@ function Library:init()
         if Device.input.group.PgBack then self.key_events.PrevPage = { { Device.input.group.PgBack } } end
     end
 
-    self.face_header = face(EMBER_BOLD, 15)
-    self.face_status = face(EMBER, 12)
-    self.face_sub = face(EMBER_BOLD, 14)
-    self.face_title = face(CAECILIA, 19, "cfont")
-    self.face_author = face(CAECILIA, 15, "cfont")
-    self.face_tag = face(EMBER, 11)
+    self.face_header = Fonts.face("ui_bold", 15)
+    self.face_status = Fonts.face("ui", 12)
+    self.face_sub = Fonts.face("ui_bold", 14)
+    self.face_title = Fonts.face("slab", 19)
+    self.face_author = Fonts.face("slab", 15)
+    self.face_tag = Fonts.face("ui", 11)
 
     self:scan()
     self:layout()
@@ -129,7 +120,7 @@ end
 
 function Library:scan()
     local start = time.now()
-    local home = G_reader_settings:readSetting("home_dir") or "/mnt/us/documents"
+    local home = G_reader_settings:readSetting("home_dir") or require("apps/filemanager/filemanagerutil").getDefaultDir()
     local calibre = loadCalibre(home:match("^(.*)/[^/]+$") or home)
 
     local opened = {}

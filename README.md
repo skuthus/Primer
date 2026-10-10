@@ -32,7 +32,10 @@ Restart KOReader to load the changes. Errors land in `koreader/crash.log` on the
 
 Primer expects a StarDict dictionary in `koreader/data/dict/` on the Kindle. We use the English-English Wiktionary from [Vuizur/Wiktionary-Dictionaries](https://github.com/Vuizur/Wiktionary-Dictionaries) (`English-English Wiktionary dictionary stardict.tar.gz`, CC BY-SA); unpack it and copy its folder there. It isn't committed here (30 MB).
 
+## Fonts
+
+On Kindles, Primer uses the device's built-in Amazon Ember (interface), Bookerly (reading) and Caecilia (library titles). Those are Amazon's proprietary fonts and aren't bundled. Everywhere else it uses the open fonts in `src/fonts/` (installed to `koreader/fonts/primer/`): Inter for the interface, Literata for reading, Bitter for library titles, each under the SIL Open Font License (licenses alongside). `fonts.lua` picks per role: Kindle font, else bundled, else KOReader's default.
+
 ## Notes
 
-- Fonts used (Amazon Ember, Bookerly, Caecilia) are the Voyage's built-in system fonts in `/usr/java/lib/fonts`; nothing is bundled.
 - Never use `_` as a throwaway variable in plugin code: KOReader's gettext is `_`, and shadowing it breaks `_("…")` calls. The lint enforces this.

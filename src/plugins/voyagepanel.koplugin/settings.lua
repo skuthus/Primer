@@ -10,8 +10,7 @@ Row kinds:  page (opens rows)  toggle (switch)  choice (opens a pick-one list)  
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -23,13 +22,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -65,10 +57,7 @@ function Settings:pages()
     P.wifi = { title = _("Wi-Fi"), rows = function() return {
         { kind = "toggle", title = _("Wireless"), subtitle = _("Turn all wireless off or on, like airplane mode"),
             get = function() return plugin:isWirelessOn() end,
-            set = function(on)
-                plugin:setWireless(on)
-                if not on then UIManager:broadcastEvent(Event:new("NetworkDisconnected")) end
-            end },
+            set = function(on) plugin:setWireless(on) end },
         { kind = "action", title = _("Wi-Fi networks"), subtitle = _("Choose a network to join"),
             run = function()
                 self:onClose()
@@ -107,12 +96,12 @@ function Settings:pages()
                 G_reader_settings:saveSetting("twelve_hour_clock", not on)
                 plugin:onClockSettingChanged()
             end },
-        { kind = "toggle", title = _("Ask to connect to a computer"), subtitle = _("When a USB cable to a computer is plugged in"),
+        Device:isKindle() and { kind = "toggle", title = _("Ask to connect to a computer"), subtitle = _("When a USB cable to a computer is plugged in"),
             get = function() return G_reader_settings:nilOrTrue("voyage_usb_prompt") end,
-            set = function(on) G_reader_settings:saveSetting("voyage_usb_prompt", on) end },
-        { kind = "toggle", title = _("Swap page-turn buttons"),
+            set = function(on) G_reader_settings:saveSetting("voyage_usb_prompt", on) end } or false,
+        Device:hasKeys() and { kind = "toggle", title = _("Swap page-turn buttons"),
             get = function() return G_reader_settings:isTrue("input_invert_page_turn_keys") end,
-            set = function() UIManager:broadcastEvent(Event:new("SwapPageTurnButtons")) end },
+            set = function() UIManager:broadcastEvent(Event:new("SwapPageTurnButtons")) end } or false,
         { kind = "action", title = _("Restart Primer"), run = function()
             self:onClose()
             UIManager:restartKOReader()
@@ -143,7 +132,9 @@ function Settings:pages()
         (function()
             local get, set = setting("screensaver_type", "random_image")
             return { kind = "choice", title = _("Sleep screen"),
-                choices = { { _("Kindle illustrations"), "random_image" }, { _("Book cover"), "cover" }, { _("None"), "disable" } },
+                choices = Device:isKindle()
+                    and { { _("Kindle illustrations"), "random_image" }, { _("Book cover"), "cover" }, { _("None"), "disable" } }
+                    or { { _("Book cover"), "cover" }, { _("None"), "disable" } },
                 get = get, set = set }
         end)(),
     } end }
@@ -219,7 +210,8 @@ function Settings:pages()
     end }
 
     P.root = { title = _("Settings"), root = true, rows = function() return {
-        { kind = "action", icon = "s-person", title = plugin:deviceName(), subtitle = _("Rename your Kindle"),
+        { kind = "action", icon = "s-person", title = plugin:deviceName(),
+            subtitle = Device:isKindle() and _("Rename your Kindle") or _("Rename this device"),
             run = function() self:rename() end },
         { kind = "page", icon = "s-wifi", title = _("Wi-Fi"), page = P.wifi },
         { kind = "page", icon = "s-device", title = _("Device options"), page = P.device },
@@ -255,12 +247,12 @@ function Settings:init()
         if Device.input.group.Back then self.key_events.Back = { { Device.input.group.Back } } end
     end
 
-    self.face_status = face(EMBER, 16)
-    self.face_header = face(EMBER_BOLD, 22)
-    self.face_title = face(EMBER_BOLD, 20)
-    self.face_title_light = face(EMBER, 20)
-    self.face_sub = face(EMBER, 17)
-    self.face_sign = face(EMBER, 28)
+    self.face_status = Fonts.face("ui", 16)
+    self.face_header = Fonts.face("ui_bold", 22)
+    self.face_title = Fonts.face("ui_bold", 20)
+    self.face_title_light = Fonts.face("ui", 20)
+    self.face_sub = Fonts.face("ui", 17)
+    self.face_sign = Fonts.face("ui", 28)
 
     local u = self.u
     self.status_h = round(100 * u)
@@ -287,7 +279,12 @@ function Settings:rows()
         end
         return rows
     end
-    return cur.page.rows()
+    -- Rows that don't apply on this device are `false` in the page definition.
+    local rows = {}
+    for __, row in ipairs(cur.page.rows()) do
+        if row then table.insert(rows, row) end
+    end
+    return rows
 end
 
 function Settings:text(str, f, max_width)

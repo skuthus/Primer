@@ -7,8 +7,7 @@ highlights and bookmarks. Swipe or use the page buttons to move through long con
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -18,13 +17,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -56,14 +48,14 @@ function GoTo:init()
         if Device.input.group.Back then self.key_events.Close = { { Device.input.group.Back } } end
     end
 
-    self.face_header = face(EMBER_BOLD, 21)
-    self.face_action = face(EMBER, 18)
-    self.face_tab = face(EMBER, 18)
-    self.face_tab_on = face(EMBER_BOLD, 18)
-    self.face_row = face(EMBER, 18)
-    self.face_row_on = face(EMBER_BOLD, 18)
-    self.face_page = face(EMBER, 16)
-    self.face_small = face(EMBER, 14)
+    self.face_header = Fonts.face("ui_bold", 21)
+    self.face_action = Fonts.face("ui", 18)
+    self.face_tab = Fonts.face("ui", 18)
+    self.face_tab_on = Fonts.face("ui_bold", 18)
+    self.face_row = Fonts.face("ui", 18)
+    self.face_row_on = Fonts.face("ui_bold", 18)
+    self.face_page = Fonts.face("ui", 16)
+    self.face_small = Fonts.face("ui", 14)
 
     -- Contents
     self.ui.toc:fillToc()

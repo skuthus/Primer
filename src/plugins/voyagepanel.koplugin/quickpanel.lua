@@ -7,13 +7,11 @@ so it can match the Kindle's layout closely.
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local NetworkMgr = require("ui/network/manager")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local datetime = require("datetime")
@@ -21,15 +19,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then
-        return Font:getFace(file, size)
-    end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -75,10 +64,10 @@ function QuickPanel:init()
         self.key_events.Close = close
     end
 
-    self.face_title = face(EMBER_BOLD, 21)
-    self.face_text = face(EMBER, 20)
-    self.face_small = face(EMBER, 15)
-    self.face_sign = face(EMBER, 26)
+    self.face_title = Fonts.face("ui_bold", 21)
+    self.face_text = Fonts.face("ui", 20)
+    self.face_small = Fonts.face("ui", 15)
+    self.face_sign = Fonts.face("ui", 26)
 
     self:layout()
 end
@@ -361,16 +350,7 @@ end
 
 function QuickPanel:pressButton(id)
     if id == "airplane" then
-        local turn_on = not self.plugin:isWirelessOn()
-        if self.plugin:setWireless(turn_on) then
-            if not turn_on then
-                UIManager:broadcastEvent(Event:new("NetworkDisconnected"))
-            end
-        elseif turn_on then
-            NetworkMgr:toggleWifiOn()
-        else
-            NetworkMgr:toggleWifiOff()
-        end
+        self.plugin:setWireless(not self.plugin:isWirelessOn())
         self:refresh()
     elseif id == "dark" then
         UIManager:broadcastEvent(Event:new("ToggleNightMode"))

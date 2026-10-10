@@ -8,8 +8,7 @@ Tapping anywhere else dismisses both and clears the selection.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
@@ -23,16 +22,6 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-local SERIF = "/usr/java/lib/fonts/Bookerly-Regular.ttf"
-local SERIF_BOLD = "/usr/java/lib/fonts/Bookerly-Bold.ttf"
-local SERIF_ITALIC = "/usr/java/lib/fonts/Bookerly-Italic.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -170,12 +159,12 @@ function Lookup:init()
         self.key_events.Close = close
     end
 
-    self.face_header = face(EMBER_BOLD, 17)
-    self.face_footer = face(EMBER_BOLD, 13)
-    self.face_head = face(SERIF_BOLD, 19)
-    self.face_pos = face(SERIF_ITALIC, 17)
-    self.face_body = face(SERIF, 17)
-    self.face_button = face(EMBER_BOLD, 18)
+    self.face_header = Fonts.face("ui_bold", 17)
+    self.face_footer = Fonts.face("ui_bold", 13)
+    self.face_head = Fonts.face("serif_bold", 19)
+    self.face_pos = Fonts.face("serif_italic", 17)
+    self.face_body = Fonts.face("serif", 17)
+    self.face_button = Fonts.face("ui_bold", 18)
 
     self:layout()
     if self.results then self:buildCard() end

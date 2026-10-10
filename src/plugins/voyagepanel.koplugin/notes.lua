@@ -14,8 +14,7 @@ with CANCEL / SAVE. Saving follows KOReader's own note saving (annotation counts
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InfoMessage = require("ui/widget/infomessage")
@@ -29,13 +28,6 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -77,10 +69,10 @@ function NotePopup:init()
         self.key_events.Escape = keys
     end
 
-    self.face_title = face(EMBER_BOLD, 22)
-    self.face_link = face(EMBER, 18)
-    self.face_body = face(EMBER, 18)
-    self.face_action = face(EMBER, 18)
+    self.face_title = Fonts.face("ui_bold", 22)
+    self.face_link = Fonts.face("ui", 18)
+    self.face_body = Fonts.face("ui", 18)
+    self.face_action = Fonts.face("ui", 18)
 
     if self.editing then self:startEditing() else self:layoutView() end
 end

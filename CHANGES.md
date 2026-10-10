@@ -88,10 +88,10 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **USB handoff.** (Installed 2026-10-09; confirmed by user, KOReader relaunches after eject.) KOReader lives on the drive the Kindle exports, so it can't stay running while mounted. Plugging into a computer (detected via `fsl-usb2-udc/gadget/connected`, which a wall charger leaves at 0) shows "Connect to your computer?"; Connect exits KOReader and starts `tools/usb-handoff.sh` from /tmp, which waits for the gadget LUN (`gadget-lun0/file`) to be lent and returned, then relaunches KOReader once its files are reachable. Log copied to `/mnt/us/voyage-usb-handoff.log`. Prompt is a Kindle-style dialog (`dialog.lua`: Amazon Ember, bordered box, divided buttons); Connect flashes inverted, then shows "Switching to USB drive mode…" and quits KOReader explicitly.
 
 ### Portability (goal: any KOReader device)
-- [ ] **Fonts:** UI and reading fonts are the Kindle's system fonts (`/usr/java/lib/fonts`: Amazon Ember, Bookerly, Caecilia); elsewhere they fall back to KOReader's default font. Needs a per-device font map or bundled open fonts.
-- [ ] **Kindle-only features, already guarded:** wireless flip and light sensor (lipc), USB handoff (`fsl-usb2-udc`), stock sleep screens (`/usr/share/blanket`), KUAL boot extension. Each needs a per-platform path (Kobo, PocketBook, Android) or should hide on non-Kindles.
-- [ ] **Paths:** `/mnt/us` defaults (library home, screensavers, device files) should come from KOReader's home dir / data dir.
-- [ ] **Layout:** sizes scale from a 1072px-wide screen; check other resolutions, aspect ratios and landscape.
+- [x] **Fonts:** `fonts.lua` resolves each role to the Kindle's font (Amazon Ember / Bookerly / Caecilia), else bundled open fonts (Inter / Literata / Bitter, OFL, `src/fonts` → `koreader/fonts/primer`), else KOReader's default. Footer and message boxes follow. No visual change on the Voyage confirmed by user; off-Kindle untested.
+- [~] **Kindle-only features hidden or adapted off-Kindle** (2026-10-10): wireless falls back to KOReader's Wi-Fi toggle; Settings hides "Ask to connect to a computer" and the "Kindle illustrations" sleep screen, and page-button swap without keys; Aa lists KOReader's fonts. Was: wireless flip and light sensor (lipc), USB handoff (`fsl-usb2-udc`), stock sleep screens (`/usr/share/blanket`), KUAL boot extension. Each needs a per-platform path (Kobo, PocketBook, Android) or should hide on non-Kindles.
+- [~] **Paths:** library home falls back to KOReader's default dir; Kindle-only paths (screensavers, USB, KUAL) stay behind Kindle checks.
+- [ ] **Layout:** sizes scale from a 1072px-wide screen; to be tuned as other devices are tested.
 
 ## Done
 - [x] Renamed KO-Plus → Primer (2026-10-10): visible strings, KUAL menu, About ("Built on KOReader" credit), repo.

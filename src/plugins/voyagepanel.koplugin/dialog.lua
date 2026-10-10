@@ -10,8 +10,7 @@ title, wrapped Ember body text, and a row of buttons split by thin dividers.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -21,13 +20,6 @@ local UIManager = require("ui/uimanager")
 local logger = require("logger")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -56,15 +48,15 @@ function Dialog:init()
     self.line = math.max(1, round(2 * u))
 
     self.title_w = self.title and TextBoxWidget:new{
-        text = self.title, face = face(EMBER_BOLD, 21), width = box_w - 2 * pad,
+        text = self.title, face = Fonts.face("ui_bold", 21), width = box_w - 2 * pad,
     }
     self.body_w = TextBoxWidget:new{
-        text = self.text, face = face(EMBER, 18), width = box_w - 2 * pad,
+        text = self.text, face = Fonts.face("ui", 18), width = box_w - 2 * pad,
     }
     self.button_h = round(110 * u)
     self.labels = {}
     for i, b in ipairs(self.buttons) do
-        self.labels[i] = TextWidget:new{ text = b.text, face = face(b.bold and EMBER_BOLD or EMBER, 19) }
+        self.labels[i] = TextWidget:new{ text = b.text, face = Fonts.face(b.bold and "ui_bold" or "ui", 19) }
     end
 
     local title_h = self.title_w and (self.title_w:getSize().h + round(24 * u)) or 0

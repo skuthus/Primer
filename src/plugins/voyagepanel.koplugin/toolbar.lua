@@ -10,8 +10,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
@@ -23,12 +22,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -72,13 +65,13 @@ function Toolbar:init()
         self.key_events.Close = close
     end
 
-    self.face_status = face(EMBER, 16)
-    self.face_label = face(EMBER, 13)
-    self.face_search = face(EMBER, 18)
-    self.face_aa = face(EMBER, 30)
-    self.face_goto = face(EMBER, 18)
-    self.face_chapter = face(EMBER, 18)
-    self.face_info = face(EMBER, 15)
+    self.face_status = Fonts.face("ui", 16)
+    self.face_label = Fonts.face("ui", 13)
+    self.face_search = Fonts.face("ui", 18)
+    self.face_aa = Fonts.face("ui", 30)
+    self.face_goto = Fonts.face("ui", 18)
+    self.face_chapter = Fonts.face("ui", 18)
+    self.face_info = Fonts.face("ui", 15)
 
     self:layout()
 end

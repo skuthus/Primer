@@ -9,8 +9,7 @@ local Blitbuffer = require("ffi/blitbuffer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
 local Event = require("ui/event")
-local Font = require("ui/font")
-local FontChooser = require("ui/widget/fontchooser")
+local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
@@ -21,13 +20,6 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local EMBER = "/usr/java/lib/fonts/Amazon-Ember-Regular.ttf"
-local EMBER_BOLD = "/usr/java/lib/fonts/Amazon-Ember-Bold.ttf"
-
-local function face(file, size)
-    if FontChooser.isFontRegistered(file) then return Font:getFace(file, size) end
-    return Font:getFace("cfont", size)
-end
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -67,13 +59,13 @@ function PageFlip:init()
         if Device.input.group.Back then self.key_events.Close = { { Device.input.group.Back } } end
     end
 
-    self.face_status = face(EMBER, 16)
-    self.face_library = face(EMBER, 21)
-    self.face_aa = face(EMBER, 21)
-    self.face_title = face(EMBER_BOLD, 19)
-    self.face_button = face(EMBER, 17)
-    self.face_chapter = face(EMBER, 19)
-    self.face_label = face(EMBER, 15)
+    self.face_status = Fonts.face("ui", 16)
+    self.face_library = Fonts.face("ui", 21)
+    self.face_aa = Fonts.face("ui", 21)
+    self.face_title = Fonts.face("ui_bold", 19)
+    self.face_button = Fonts.face("ui", 17)
+    self.face_chapter = Fonts.face("ui", 19)
+    self.face_label = Fonts.face("ui", 15)
 
     self:layout()
     self:requestThumbnails()
