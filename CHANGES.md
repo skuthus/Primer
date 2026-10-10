@@ -84,6 +84,16 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Apply with `tools/apply-gestures.py`. Confirmed by user.
 - [x] **Quick panel opens on swipe release**, so the rest of the opening swipe can't drag the brightness slider. Confirmed by user.
 
+- [x] **Library refinements** (2026-10-10): header shows time • date (follows 12/24 h, refreshed each minute) instead of the device name; Wi-Fi icon only when wireless is on, nothing when off; slim footer with "Page N of M" on the right; per-book progress after the dots ("23%" while reading, "read" when finished, nothing if unopened), replacing the margin tag. Confirmed by user.
+
+- [x] **Library: filter, search, NEW, book card, trash** (2026-10-10). Confirmed by user.
+  - Tap "Showing … ▾" for a dropdown: All Items / Reading / Unread / Finished / Trash (remembered).
+  - Search (footer left) opens a Kindle-style bar at the top (magnifier, field, Cancel) with the keyboard below; the list filters as you type. Footer then offers "Clear “…”".
+  - NEW badge right after the title for unopened books added in the last 3 days.
+  - Long-press a book: compact card (cover, title, author, series, status, format/size; no description) with Open / Mark as Read (Unread) / Remove.
+  - Remove moves the book and its reading data to a hidden `.primer-trash` folder (no confirmation, it's reversible). The Trash view lists removed books ("Removed 2 days ago"); tap or long-press for Restore (to its original folder) / Delete Forever (confirmed); footer offers Empty Trash.
+  - Footer height raised to between the original and slim versions.
+
 ### Device
 - [x] **USB handoff.** (Installed 2026-10-09; confirmed by user, KOReader relaunches after eject.) KOReader lives on the drive the Kindle exports, so it can't stay running while mounted. Plugging into a computer (detected via `fsl-usb2-udc/gadget/connected`, which a wall charger leaves at 0) shows "Connect to your computer?"; Connect exits KOReader and starts `tools/usb-handoff.sh` from /tmp, which waits for the gadget LUN (`gadget-lun0/file`) to be lent and returned, then relaunches KOReader once its files are reachable. Log copied to `/mnt/us/voyage-usb-handoff.log`. Prompt is a Kindle-style dialog (`dialog.lua`: Amazon Ember, bordered box, divided buttons); Connect flashes inverted, then shows "Switching to USB drive mode…" and quits KOReader explicitly.
 

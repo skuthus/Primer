@@ -5,6 +5,9 @@ the left in Caecilia with length/progress dots underneath, author on the right,
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
+local BookCard = require("bookcard")
+local SearchBar = require("searchbar")
+local Trash = require("trash")
 local BookList = require("ui/widget/booklist")
 local Device = require("device")
 local DocumentRegistry = require("document/documentregistry")
@@ -17,10 +20,16 @@ local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local lfs = require("libs/libkoreader-lfs")
 local logger = require("logger")
+local datetime = require("datetime")
 local time = require("ui/time")
 local _ = require("gettext")
 local Screen = Device.screen
 
+
+local NEW_DAYS = 3 -- unopened books added within this many days get a "NEW" badge
+
+local FILTERS = { "all", "reading", "unread", "finished", "trash" }
+local FILTER_LABELS = { all = _("All Items"), reading = _("Reading"), unread = _("Unread"), finished = _("Finished"), trash = _("Trash") }
 
 local SORTS = { "recent", "title", "author", "added" }
 local SORT_LABELS = {
@@ -60,10 +69,14 @@ local function loadCalibre(device_root)
     for __, book in ipairs(books) do
         if type(book.lpath) == "string" then
             local authors = type(book.authors) == "table" and table.concat(book.authors, " & ") or nil
+            local function str(v) return type(v) == "string" and v or nil end
             by_path[device_root .. "/" .. book.lpath] = {
-                title = type(book.title) == "string" and book.title or nil,
+                title = str(book.title),
                 author = authors,
-                author_sort = type(book.author_sort) == "string" and book.author_sort or nil,
+                author_sort = str(book.author_sort),
+                series = str(book.series),
+                series_index = type(book.series_index) == "number" and book.series_index or nil,
+                comments = str(book.comments),
             }
         end
     end
@@ -93,12 +106,15 @@ function Library:init()
     self.width, self.height = Screen:getWidth(), Screen:getHeight()
     self.dimen = Geom:new{ x = 0, y = 0, w = self.width, h = self.height }
     self.sort = G_reader_settings:readSetting("voyage_library_sort") or "recent"
+    self.filter = G_reader_settings:readSetting("voyage_library_filter") or "all"
+    self.query = nil
     self.page = 1
     self.cache = {}
 
     local screen = self.dimen
     self.ges_events = {
         Tap = { GestureRange:new{ ges = "tap", range = screen } },
+        Hold = { GestureRange:new{ ges = "hold", range = screen } },
         Swipe = { GestureRange:new{ ges = "swipe", range = screen } },
     }
     if Device:hasKeys() then
@@ -112,7 +128,10 @@ function Library:init()
     self.face_sub = Fonts.face("ui_bold", 14)
     self.face_title = Fonts.face("slab", 19)
     self.face_author = Fonts.face("slab", 15)
-    self.face_tag = Fonts.face("ui", 11)
+    self.face_tag = Fonts.face("ui", 12)
+    self.face_badge = Fonts.face("ui_bold", 10)
+    self.face_footer = Fonts.face("ui", 14)
+    self.face_menu = Fonts.face("ui", 17)
 
     self:scan()
     self:layout()
@@ -149,6 +168,9 @@ function Library:scan()
                         file = path,
                         title = title,
                         author = author,
+                        series = meta and meta.series,
+                        series_index = meta and meta.series_index,
+                        comments = meta and meta.comments,
                         title_key = titleKey(title),
                         author_key = meta and meta.author_sort and meta.author_sort:lower() or authorKey(author),
                         size = attr.size or 0,
@@ -160,14 +182,15 @@ function Library:scan()
         end
     end
     walk(home)
-    self.books = books
+    self.all_books = books
     self:sortBooks()
+    self:applyView()
     logger.info("VoyageLibrary: scanned", #books, "books in", time.to_ms(time.since(start)), "ms")
 end
 
 function Library:sortBooks()
     local sort = self.sort
-    table.sort(self.books, function(a, b)
+    table.sort(self.all_books, function(a, b)
         if sort == "title" then
             if a.title_key ~= b.title_key then return a.title_key < b.title_key end
         elseif sort == "author" then
@@ -181,6 +204,48 @@ function Library:sortBooks()
         end
         return a.file < b.file
     end)
+end
+
+-- "reading" / "unread" / "finished", cached per book (reset when it changes).
+function Library:statusOf(book)
+    if not book.status then
+        if not BookList.hasBookBeenOpened(book.file) then
+            book.status = "unread"
+        else
+            local info = BookList.getBookInfo(book.file)
+            book.status = info.status == "complete" and "finished" or "reading"
+        end
+    end
+    return book.status
+end
+
+-- The visible list: all books, narrowed by the status filter and the search, in sort order.
+function Library:applyView()
+    local query = self.query and self.query:lower()
+    local books = {}
+    if self.filter == "trash" then
+        for __, item in ipairs(Trash.list()) do
+            local title, author = fromFilename(item.name)
+            local keep = not query or title:lower():find(query, 1, true) or author:lower():find(query, 1, true)
+            if keep then
+                table.insert(books, { file = item.file, title = title, author = author, size = item.size,
+                    added = 0, opened = 0, trashed = item })
+            end
+        end
+        self.books = books
+        self.page = 1
+        return
+    end
+    for __, book in ipairs(self.all_books) do
+        local keep = self.filter == "all" or self:statusOf(book) == self.filter
+        if keep and query then
+            keep = book.title:lower():find(query, 1, true) or book.author:lower():find(query, 1, true)
+                or (book.series and book.series:lower():find(query, 1, true))
+        end
+        if keep then table.insert(books, book) end
+    end
+    self.books = books
+    self.page = 1
 end
 
 -- TextWidgets cached by (text, face, max width); freed on close.
@@ -213,15 +278,18 @@ function Library:layout()
     self.sort_hit = Geom:new{ x = W - pad - sort_w - round(W * 0.05), y = self.sub_y - round(W * 0.02),
         w = sort_w + round(W * 0.05) + pad, h = sub_h + round(W * 0.04) }
 
-    -- Rows fill the space between subheader and footer.
-    self.footer_y = H - round(W * 0.075)
-    self.list_y = self.sub_y + sub_h + round(W * 0.03)
+    -- Rows fill the space between subheader and a slim footer.
+    self.footer_h = round(W * 0.064)
+    self.footer_top = H - self.footer_h
+    self.search_hit = Geom:new{ x = 0, y = self.footer_top, w = round(W * 0.6), h = self.footer_h }
+    self.filter_hit = Geom:new{ x = 0, y = self.sub_y - round(W * 0.02), w = self.sort_hit.x, h = sub_h + round(W * 0.04) }
+    self.list_y = self.sub_y + sub_h + round(W * 0.025)
     self.row_h = round(W * 0.098)
-    self.per_page = math.max(1, math.floor((self.footer_y - round(W * 0.02) - self.list_y) / self.row_h))
+    self.per_page = math.max(1, math.floor((self.footer_top - round(W * 0.01) - self.list_y) / self.row_h))
     self.pages = math.max(1, math.ceil(#self.books / self.per_page))
     self.page = math.min(self.page, self.pages)
 
-    -- Titles line up with "Showing All…"; the "read" tag hangs in the margin, like the Kindle 2.
+    -- Titles line up with "Showing All…".
     self.title_x = pad
     local text_w = W - self.title_x - pad
     self.title_max = round(text_w * 0.64)
@@ -255,24 +323,52 @@ function Library:paintBattery(bb, right, cy)
     return x
 end
 
+function Library:paintHeader(bb, x, y)
+    local W, bar = self.width, self.bar
+    bb:paintRoundedRect(x + bar.x, y + bar.y, bar.w, bar.h, Blitbuffer.COLOR_LIGHT_GRAY, round(bar.h * 0.25))
+    local cy = y + bar.y + round(bar.h / 2)
+    local now = os.time()
+    local stamp = datetime.secondsToHour(now, G_reader_settings:isTrue("twelve_hour_clock"))
+        .. "  •  " .. os.date("%d %b %Y", now):gsub("^0", "")
+    local clock = TextWidget:new{ text = stamp, face = self.face_header }
+    clock:paintTo(bb, x + bar.x + round(W * 0.025), cy - round(clock:getSize().h / 2))
+    clock:free()
+    local right = self:paintBattery(bb, x + bar.x + bar.w - round(W * 0.025), cy)
+    if self.plugin:isWirelessOn() then
+        local s = round(bar.h * 0.55)
+        local wifi = self.plugin:icon("s-wifi", s)
+        wifi:paintTo(bb, right - round(W * 0.02) - s, cy - round(s / 2))
+        wifi:free()
+    end
+end
+
+-- Keep the header clock current while the library is up (refreshes just the bar).
+function Library:clockTick()
+    UIManager:setDirty(self, function() return "ui", self.bar end)
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.clock_tick)
+end
+
 function Library:paintLibrary(bb, x, y)
     local W, pad = self.width, self.pad
     bb:paintRect(x, y, W, self.height, Blitbuffer.COLOR_WHITE)
 
-    -- Header bar: name left; wireless state and battery right.
-    local bar = self.bar
-    bb:paintRoundedRect(x + bar.x, y + bar.y, bar.w, bar.h, Blitbuffer.COLOR_LIGHT_GRAY, round(bar.h * 0.25))
-    local name = self:text(self.plugin:deviceName(), self.face_header)
-    local cy = y + bar.y + round(bar.h / 2)
-    name:paintTo(bb, x + bar.x + round(W * 0.025), cy - round(name:getSize().h / 2))
-    local batt_x = self:paintBattery(bb, x + bar.x + bar.w - round(W * 0.025), cy)
-    local wireless = self:text(self.plugin:isWirelessOn() and _("Wi-Fi") or _("OFF"), self.face_status)
-    wireless:paintTo(bb, batt_x - round(W * 0.02) - wireless:getSize().w, cy - round(wireless:getSize().h / 2))
+    -- Header bar: time and date left; Wi-Fi (only when on) and battery right.
+    self:paintHeader(bb, x, y)
 
-    -- Subheader
+    -- Subheader: what's showing (tap for the filter), sort on the right.
     local count = #self.books
-    local showing = self:text(count == 1 and _("Showing 1 Item") or string.format(_("Showing All %d Items"), count), self.face_sub)
-    showing:paintTo(bb, x + pad, y + self.sub_y)
+    local showing
+    if self.query then
+        showing = count == 1 and string.format(_("1 Result for “%s”"), self.query) or string.format(_("%d Results for “%s”"), count, self.query)
+    elseif self.filter == "trash" then
+        showing = count == 1 and _("1 Book in Trash") or string.format(_("%d Books in Trash"), count)
+    elseif self.filter == "all" then
+        showing = count == 1 and _("Showing 1 Item") or string.format(_("Showing All %d Items"), count)
+    else
+        showing = string.format(_("Showing %d %s"), count, FILTER_LABELS[self.filter])
+    end
+    local showing_w = self:text(showing .. "  ▾", self.face_sub, round(W * 0.55))
+    showing_w:paintTo(bb, x + pad, y + self.sub_y)
     local sort = self:text(SORT_LABELS[self.sort], self.face_sub)
     sort:paintTo(bb, x + W - pad - sort:getSize().w, y + self.sub_y)
 
@@ -282,14 +378,59 @@ function Library:paintLibrary(bb, x, y)
         self:paintRow(bb, x, y + self.list_y + (i - first) * self.row_h, self.books[i], i == self.pressed)
     end
 
-    -- Footer
-    local footer = self:text(string.format(_("Page %d of %d"), self.page, self.pages), self.face_sub)
-    footer:paintTo(bb, x + pad, y + self.footer_y)
-    bb:paintRect(x, y + self.footer_y - round(W * 0.018), W, math.max(1, round(W * 0.0015)), Blitbuffer.COLOR_LIGHT_GRAY)
+    -- Footer: slim rule, Search on the left, page position on the right.
+    bb:paintRect(x, y + self.footer_top, W, math.max(1, round(W * 0.0015)), Blitbuffer.COLOR_LIGHT_GRAY)
+    local fy = y + self.footer_top + round(self.footer_h / 2)
+    local is = round(self.footer_h * 0.42)
+    local label
+    if self.filter == "trash" and not self.query then
+        label = count > 0 and _("Empty Trash") or nil
+    else
+        local icon = self.plugin:icon(self.query and "close" or "search", is)
+        icon:paintTo(bb, x + pad, fy - round(is / 2))
+        icon:free()
+        label = self.query and string.format(_("Clear “%s”"), self.query) or _("Search")
+    end
+    if label then
+        local lx = x + pad + ((self.filter == "trash" and not self.query) and 0 or (is + round(W * 0.015)))
+        local search = self:text(label, self.face_footer, round(W * 0.45))
+        search:paintTo(bb, lx, fy - round(search:getSize().h / 2))
+    end
+    local footer = self:text(string.format(_("Page %d of %d"), self.page, self.pages), self.face_footer)
+    footer:paintTo(bb, x + W - pad - footer:getSize().w, y + self.footer_top + round((self.footer_h - footer:getSize().h) / 2))
     if count == 0 then
-        local empty = self:text(_("No books found in ") .. (G_reader_settings:readSetting("home_dir") or "documents"), self.face_author)
+        local msg = (self.query or self.filter ~= "all") and _("No matching books.")
+            or (_("No books found in ") .. (G_reader_settings:readSetting("home_dir") or "documents"))
+        local empty = self:text(msg, self.face_author)
         empty:paintTo(bb, x + round((W - empty:getSize().w) / 2), y + self.list_y + self.row_h)
     end
+    self:paintFilterMenu(bb, x, y)
+end
+
+-- Status filter dropdown under "Showing …".
+function Library:paintFilterMenu(bb, x, y)
+    if not self.menu_open then return end
+    local W, pad = self.width, self.pad
+    local row_h = round(W * 0.085)
+    local w = round(W * 0.5)
+    local line = math.max(1, round(W * 0.002))
+    self.menu = Geom:new{ x = pad - round(W * 0.015), y = self.sub_y + round(W * 0.05), w = w, h = row_h * #FILTERS }
+    local m = self.menu
+    bb:paintRect(x + m.x, y + m.y, m.w, m.h, Blitbuffer.COLOR_WHITE)
+    bb:paintBorder(x + m.x, y + m.y, m.w, m.h, line, Blitbuffer.COLOR_BLACK)
+    for i, id in ipairs(FILTERS) do
+        local ry = y + m.y + (i - 1) * row_h
+        if i > 1 then bb:paintRect(x + m.x, ry, m.w, line, Blitbuffer.COLOR_LIGHT_GRAY) end
+        local t = self:text(FILTER_LABELS[id], self.face_menu)
+        t:paintTo(bb, x + m.x + round(W * 0.04), ry + round((row_h - t:getSize().h) / 2))
+        if id == self.filter then
+            local cs = round(row_h * 0.45)
+            local check = self.plugin:icon("check", cs)
+            check:paintTo(bb, x + m.x + m.w - round(W * 0.03) - cs, ry + round((row_h - cs) / 2))
+            check:free()
+        end
+    end
+    self.menu_row_h = row_h
 end
 
 function Library:paintRow(bb, x, row_y, book, pressed)
@@ -298,18 +439,39 @@ function Library:paintRow(bb, x, row_y, book, pressed)
     local finished = info.been_opened and info.status == "complete"
     local percent = finished and 1 or (info.percent_finished or 0)
 
-    local title = self:text(book.title, self.face_title, self.title_max)
+    -- NEW badge sits right after the title (for unopened books added in the last few days).
+    local is_new = not book.trashed and not info.been_opened and os.time() - book.added < NEW_DAYS * 86400
+    local badge, badge_w, badge_h
+    if is_new then
+        badge = TextWidget:new{ text = _("NEW"), face = self.face_badge, fgcolor = Blitbuffer.COLOR_WHITE }
+        badge_h = badge:getSize().h
+        badge_w = badge:getSize().w + round(W * 0.014)
+    end
+    local title = self:text(book.title, self.face_title, self.title_max - (badge and badge_w + round(W * 0.015) or 0))
     local author = self:text(book.author, self.face_author, self.author_max)
     local th = title:getSize().h
     local title_y = row_y + round(self.row_h * 0.12)
     title:paintTo(bb, x + self.title_x, title_y)
+    if badge then
+        local bx = x + self.title_x + title:getSize().w + round(W * 0.015)
+        local by = title_y + round((th - badge_h) / 2)
+        bb:paintRoundedRect(bx, by, badge_w, badge_h, Blitbuffer.COLOR_BLACK, round(badge_h * 0.3))
+        badge:paintTo(bb, bx + round((badge_w - badge:getSize().w) / 2), by)
+        badge:free()
+    end
     local ah = author:getSize().h
     author:paintTo(bb, x + W - pad - author:getSize().w, title_y + th - ah)
 
-    if finished then
-        local tag = self:text(_("read"), self.face_tag)
-        local tag_x = math.max(round(W * 0.005), pad - round(W * 0.008) - tag:getSize().w)
-        tag:paintTo(bb, x + tag_x, title_y + round((th - tag:getSize().h) / 2))
+    -- Trashed books: when they were removed, instead of progress.
+    if book.trashed then
+        local days = math.floor((os.time() - (book.trashed.time or 0)) / 86400)
+        local when = (book.trashed.time or 0) <= 0 and _("Removed")
+            or days <= 0 and _("Removed today") or days == 1 and _("Removed yesterday")
+            or string.format(_("Removed %d days ago"), days)
+        local t = self:text(when, self.face_tag)
+        t:paintTo(bb, x + self.title_x, title_y + th)
+        if pressed then bb:invertRect(x, row_y, W, self.row_h) end
+        return
     end
 
     -- Dots: count follows the book's size, filled dots show how far you've read.
@@ -324,6 +486,19 @@ function Library:paintRow(bb, x, row_y, book, pressed)
         else
             bb:paintRect(dx + 1, dot_y, self.dot, self.dot, Blitbuffer.COLOR_DARK_GRAY)
         end
+    end
+
+    -- Progress after the dots: "read" when finished, "23%" while reading, otherwise nothing.
+    local label
+    if finished then
+        label = _("read")
+    elseif info.been_opened and percent > 0 then
+        label = string.format("%d%%", math.max(1, math.floor(percent * 100)))
+    end
+    if label then
+        local t = self:text(label, self.face_tag)
+        local lx = x + self.title_x + total * (self.dot + self.dot_gap) + round(W * 0.008)
+        t:paintTo(bb, lx, dot_y + round(self.dot / 2) - round(t:getSize().h / 2))
     end
 
     if pressed then
@@ -357,6 +532,21 @@ end
 
 function Library:onTap(__, ges)
     local pos = ges.pos
+    -- Filter dropdown open: pick an entry, or close it.
+    if self.menu_open then
+        if self.menu and inside(pos, self.menu) then
+            local id = FILTERS[math.floor((pos.y - self.menu.y) / self.menu_row_h) + 1]
+            if id and id ~= self.filter then
+                self.filter = id
+                G_reader_settings:saveSetting("voyage_library_filter", id)
+                self:applyView()
+                self:layout()
+            end
+        end
+        self.menu_open = false
+        self:refresh("partial")
+        return true
+    end
     if inside(pos, self.sort_hit) then
         local next_sort = SORTS[1]
         for i, s in ipairs(SORTS) do
@@ -365,19 +555,92 @@ function Library:onTap(__, ges)
         self.sort = next_sort
         G_reader_settings:saveSetting("voyage_library_sort", next_sort)
         self:sortBooks()
-        self.page = 1
+        self:applyView()
         self:clearCache()
         self:layout()
         self:refresh("partial")
+    elseif inside(pos, self.filter_hit) then
+        self.menu_open = true
+        self:refresh("ui")
+    elseif inside(pos, self.search_hit) then
+        if self.query then
+            self:setQuery(nil)
+        elseif self.filter == "trash" then
+            if #self.books > 0 then self:confirmEmptyTrash() end
+        else
+            self:showSearch()
+        end
     elseif pos.y < self.sub_y then
         self.plugin:openAllSettings()
     else
         local index = self:rowAt(pos)
-        if index then self:openBook(index) end
+        if index and self.books[index].trashed then
+            self:onHold(nil, ges)
+        elseif index then
+            self:openBook(index)
+        end
     end
     return true
 end
 
+function Library:setQuery(text)
+    text = text and text:gsub("^%s+", ""):gsub("%s+$", "")
+    self.query = (text and text ~= "") and text or nil
+    self:applyView()
+    self:layout()
+    self:refresh("partial")
+end
+
+-- Kindle-style search bar over the library; the list filters as you type.
+function Library:showSearch()
+    UIManager:show(SearchBar:new{
+        plugin = self.plugin,
+        text = self.query or "",
+        on_change = function(text) self:setQuery(text) end,
+        on_done = function(text) self:setQuery(text) end,
+        on_cancel = function() self:setQuery(nil) end,
+    })
+end
+
+function Library:confirmEmptyTrash()
+    local Dialog = require("dialog")
+    UIManager:show(Dialog:new{
+        title = _("Empty Trash?"),
+        text = string.format(_("%d books and their reading progress, highlights and notes will be deleted for good."), #self.books),
+        buttons = {
+            { text = _("Cancel") },
+            { text = _("Empty Trash"), bold = true, callback = function()
+                Trash.empty()
+                self:applyView()
+                self:layout()
+                self:refresh("partial")
+            end },
+        },
+    })
+end
+-- Long-press a book: the info card (cover, details, Open / Mark as Read / Remove).
+function Library:onHold(__, ges)
+    local index = self:rowAt(ges.pos)
+    local book = index and self.books[index]
+    if not book then return true end
+    UIManager:show(BookCard:new{
+        plugin = self.plugin,
+        book = book,
+        on_open = function() self:openBook(index) end,
+        on_changed = function()
+            book.status = nil
+            self:applyView()
+            self:layout()
+            self:refresh("partial")
+        end,
+        on_removed = function() -- moved to / restored from / deleted from the trash
+            self:scan()
+            self:layout()
+            self:refresh("partial")
+        end,
+    })
+    return true
+end
 function Library:openBook(index)
     -- Like the Kindle: the tapped row stays inverted until the book appears,
     -- with no "Opening file" box (seamless open).
@@ -410,10 +673,24 @@ end
 
 function Library:onShow()
     self:refresh("full")
+    self.clock_tick = self.clock_tick or function() self:clockTick() end
+    UIManager:scheduleIn(61 - tonumber(os.date("%S")), self.clock_tick)
     return true
 end
 
+function Library:onSuspend()
+    if self.clock_tick then UIManager:unschedule(self.clock_tick) end
+end
+
+function Library:onResume()
+    if self.clock_tick then
+        UIManager:unschedule(self.clock_tick)
+        self:clockTick()
+    end
+end
+
 function Library:onCloseWidget()
+    if self.clock_tick then UIManager:unschedule(self.clock_tick) end
     self:clearCache()
     self.plugin.library = nil
 end
