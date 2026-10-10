@@ -665,6 +665,18 @@ function VoyagePanel:showEndCard()
     end
 end
 
+function VoyagePanel:showWifiNetworks()
+    UIManager:show(WifiList:new{ plugin = self, scan = true })
+end
+
+-- "Connected to Home", "Not connected", or "Wireless is off" (Settings > Wi-Fi).
+function VoyagePanel:wifiSummary()
+    if not self:isWirelessOn() then return _("Wireless is off") end
+    local ok, current = pcall(NetworkMgr.getCurrentNetwork, NetworkMgr)
+    if ok and current and current.ssid then return string.format(_("Connected to %s"), current.ssid) end
+    return _("Not connected · choose a network to join")
+end
+
 function VoyagePanel:showStats()
     if self.stats or not self.ui.document then return end
     local ok, err = pcall(function()

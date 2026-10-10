@@ -58,11 +58,8 @@ function Settings:pages()
         { kind = "toggle", title = _("Wireless"), subtitle = _("Turn all wireless off or on, like airplane mode"),
             get = function() return plugin:isWirelessOn() end,
             set = function(on) plugin:setWireless(on) end },
-        { kind = "action", title = _("Wi-Fi networks"), subtitle = _("Choose a network to join"),
-            run = function()
-                self:onClose()
-                require("ui/network/manager"):reconnectOrShowNetworkMenu(nil, true)
-            end },
+        { kind = "action", title = _("Wi-Fi networks"), subtitle = plugin:wifiSummary(),
+            run = function() plugin:showWifiNetworks() end },
     } end }
 
     local sleep_get, sleep_set = setting("auto_suspend_timeout_seconds", 900)
