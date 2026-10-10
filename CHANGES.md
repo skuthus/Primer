@@ -37,6 +37,9 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - Kumba (rename) · Wi-Fi (wireless toggle, networks) · Device options (battery, sleep after, start with last book/library, ask to connect to a computer, swap page-turn buttons, restart KOReader) · Screen and brightness (brightness panel, auto brightness, dark mode, full page refresh never/20/40, chapter refresh, sleep screen illustrations/cover/none) · Reading (Aa, reading progress, clock, highlight menu) · Home and Library (Kindle-style library, sort) · Advanced (KOReader menu, SSH server) · About.
   - Rows: icon, bold title, subtitle (current value for choices), ›, switches for toggles; choices open a pick-one list with a check mark. ‹ title, swipe right or Back go up a level; chevron or ✕ close.
 
+- [~] **24-hour clock toggle** (Settings > Device options; subtitle shows the current time in the chosen format). All Primer clocks follow it. The toolbar's status line now has the time top-left with the title centred, like the other menus; the reading clock stays top-centre. Awaiting test.
+- [~] About describes Primer as "A modern UI frontend for KOReader". Awaiting test.
+
 ### Dictionary
 - [x] **Kindle-style dictionary.** (Installed 2026-10-10; confirmed by user.) Modeled on `design/reference/kindle-dictionary-photo.webp`.
   - Dictionary: English-English Wiktionary (462k entries, CC BY-SA, github.com/Vuizur/Wiktionary-Dictionaries, the source KOReader's catalog uses) in `koreader/data/dict/`. The Voyage's built-in Oxford dictionaries are DRM-protected Amazon files KOReader can't read.
@@ -83,6 +86,12 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 
 ### Device
 - [x] **USB handoff.** (Installed 2026-10-09; confirmed by user, KOReader relaunches after eject.) KOReader lives on the drive the Kindle exports, so it can't stay running while mounted. Plugging into a computer (detected via `fsl-usb2-udc/gadget/connected`, which a wall charger leaves at 0) shows "Connect to your computer?"; Connect exits KOReader and starts `tools/usb-handoff.sh` from /tmp, which waits for the gadget LUN (`gadget-lun0/file`) to be lent and returned, then relaunches KOReader once its files are reachable. Log copied to `/mnt/us/voyage-usb-handoff.log`. Prompt is a Kindle-style dialog (`dialog.lua`: Amazon Ember, bordered box, divided buttons); Connect flashes inverted, then shows "Switching to USB drive mode…" and quits KOReader explicitly.
+
+### Portability (goal: any KOReader device)
+- [ ] **Fonts:** UI and reading fonts are the Kindle's system fonts (`/usr/java/lib/fonts`: Amazon Ember, Bookerly, Caecilia); elsewhere they fall back to KOReader's default font. Needs a per-device font map or bundled open fonts.
+- [ ] **Kindle-only features, already guarded:** wireless flip and light sensor (lipc), USB handoff (`fsl-usb2-udc`), stock sleep screens (`/usr/share/blanket`), KUAL boot extension. Each needs a per-platform path (Kobo, PocketBook, Android) or should hide on non-Kindles.
+- [ ] **Paths:** `/mnt/us` defaults (library home, screensavers, device files) should come from KOReader's home dir / data dir.
+- [ ] **Layout:** sizes scale from a 1072px-wide screen; check other resolutions, aspect ratios and landscape.
 
 ## Done
 - [x] Renamed KO-Plus → Primer (2026-10-10): visible strings, KUAL menu, About ("Built on KOReader" credit), repo.

@@ -182,13 +182,12 @@ function Toolbar:paintToolbar(bb, x, y)
     bb:paintRect(x, y, W, self.top.h, WHITE)
     bb:paintRect(x, y + self.bottom.y, W, self.bottom_h, WHITE)
 
-    -- Status line: title left; airplane, battery and time right.
+    -- Status line: time left, title centred, airplane and battery right (like the other menus).
     local cy = y + round(self.status_h / 2)
     local clock = self:text(datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock")), self.face_status)
-    local right = x + W - pad
-    clock:paintTo(bb, right - clock:getSize().w, cy - round(clock:getSize().h / 2))
-    right = right - clock:getSize().w - round(28 * u)
-    right = self.plugin:paintBattery(bb, right, cy, round(20 * u))
+    clock:paintTo(bb, x + pad, cy - round(clock:getSize().h / 2))
+    local left = x + pad + clock:getSize().w + round(28 * u)
+    local right = self.plugin:paintBattery(bb, x + W - pad, cy, round(20 * u))
     local powerd = Device:getPowerDevice()
     local pct = self:text(string.format("%d%%", powerd:getCapacity()), self.face_status)
     right = right - round(6 * u) - pct:getSize().w
@@ -200,8 +199,10 @@ function Toolbar:paintToolbar(bb, x, y)
         plane:free()
     end
     local title = self.ui.doc_props and self.ui.doc_props.display_title or ""
-    local title_w = self:text(title, self.face_status, right - x - pad - round(20 * u))
-    title_w:paintTo(bb, x + pad, cy - round(title_w:getSize().h / 2))
+    -- Centred on the screen, but kept clear of the clock and the status icons.
+    local room = 2 * math.min(x + W / 2 - left, right - (x + W / 2)) - round(20 * u)
+    local title_w = self:text(title, self.face_status, math.max(room, round(100 * u)))
+    title_w:paintTo(bb, x + round((W - title_w:getSize().w) / 2), cy - round(title_w:getSize().h / 2))
     self:paintLine(bb, x, y + self.row1_y - self.line, W)
 
     -- Row 1

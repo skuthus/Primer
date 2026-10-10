@@ -100,6 +100,13 @@ function Settings:pages()
                 choices = { { _("Open the last book"), "last" }, { _("Show the library"), "filemanager" } },
                 get = get, set = set }
         end)(),
+        { kind = "toggle", title = _("24-hour clock"),
+            subtitle = datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock")),
+            get = function() return not G_reader_settings:isTrue("twelve_hour_clock") end,
+            set = function(on)
+                G_reader_settings:saveSetting("twelve_hour_clock", not on)
+                plugin:onClockSettingChanged()
+            end },
         { kind = "toggle", title = _("Ask to connect to a computer"), subtitle = _("When a USB cable to a computer is plugged in"),
             get = function() return G_reader_settings:nilOrTrue("voyage_usb_prompt") end,
             set = function(on) G_reader_settings:saveSetting("voyage_usb_prompt", on) end },
@@ -205,7 +212,7 @@ function Settings:pages()
     P.about = { title = _("About"), rows = function()
         local ok, version = pcall(function() return require("version"):getCurrentRevision() end)
         return {
-            { kind = "info", title = "Primer", subtitle = _("Kindle-style reading for the Voyage") },
+            { kind = "info", title = "Primer", subtitle = _("A modern UI frontend for KOReader") },
             { kind = "info", title = _("Built on KOReader"), subtitle = ok and version or "?" },
             { kind = "info", title = _("Device"), subtitle = Device.model or "Kindle" },
         }

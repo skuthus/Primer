@@ -1,6 +1,6 @@
 # Primer
 
-A Kindle-style reading system for the Kindle Voyage, built on [KOReader](https://github.com/koreader/koreader): KOReader as the whole OS, trimmed and restyled to look and behave like the stock Kindle software.
+A modern UI frontend for [KOReader](https://github.com/koreader/koreader): a curated, Kindle-inspired interface (library, reading toolbar, quick panel, Aa, dictionary, notes, settings) over KOReader's engine. Developed on a Kindle Voyage, with the goal of running on any KOReader-compatible device.
 
 The name: a first book; the interactive book in Neal Stephenson's *The Diamond Age*; and a quiet nod to Amazon (Prime → Primer).
 
