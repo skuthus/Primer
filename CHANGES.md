@@ -115,6 +115,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Four more sleep screen collections**, chosen in Settings > Screen and brightness > Sleep screen (alongside Kindle illustrations, Book cover, None): Doré engravings (Inferno, Paradise Lost), Tenniel's Alice, Japanese woodblocks (Hiroshige's Hundred Famous Views of Edo), Haeckel's nature forms. 15 images each, public domain from Wikimedia Commons, 1072×1448 greyscale JPEG, scaled to fill the screen and centre-cropped (no white bars; Hiroshige zoomed a little more to trim paper margins), 38 MB in all, installed to `koreader/screensavers/primer/`; sources in `src/screensavers/CREDITS.md`.
 
 ### Gestures
+- [x] **Refresh the screen on demand** (2026-10-10, confirmed by user): a two-finger tap anywhere (fingers close together; the wide corner-to-corner tap is still a screenshot), or holding a page-turn button for about a second. Holding a page button no longer flips pages rapidly. Works on every screen (handled where input arrives).
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 
 - [x] **No brightness gestures.** Left-edge swipes, two-finger vertical swipes and the south-west multiswipe no longer change brightness (Kindle has none; brightness lives in the quick panel). Applied by the first-run setup. Confirmed by user.
