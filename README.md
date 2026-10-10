@@ -17,6 +17,7 @@ Target: Kindle Voyage, firmware 5.13.6, jailbroken, KOReader v2026.07.1 (`kindle
 | `src/patches/2-kindle-footer.lua` | Kindle-style footer: "Page 9" left, "45%" right, aligned to the text margins |
 | `src/patches/2-kindle-messages.lua` | Kindle-style message boxes; hides "Opening file" |
 | `src/extensions/primer/` | KUAL menu: start Primer at boot (once per boot, `/mnt/us/NO_KOREADER` skips it). Primer's Settings and welcome screen use the same script |
+| `src/screensavers/` | Public domain sleep screen collections (Doré, Tenniel, Hiroshige, Haeckel), installed to `koreader/screensavers/primer/`; sources in `CREDITS.md` |
 | `INSTALL.txt` | End-user install guide, shipped in the release zip |
 | `tools/package.sh` | Build the release zip (`dist/Primer-<version>.zip`) |
 | `tools/lint/` | Static checks (syntax, unknown globals, `_` shadowing). There's no KOReader for macOS, so these run before every deploy |

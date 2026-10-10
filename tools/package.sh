@@ -28,10 +28,11 @@ if [ -n "$KOREADER_ZIP" ]; then
 	[ -d "$STAGE/koreader" ] || { echo "$KOREADER_ZIP doesn't look like a KOReader release (no koreader/ folder)"; exit 1; }
 fi
 
-mkdir -p "$STAGE/koreader/plugins" "$STAGE/koreader/patches" "$STAGE/koreader/fonts/primer" "$STAGE/extensions"
+mkdir -p "$STAGE/koreader/plugins" "$STAGE/koreader/patches" "$STAGE/koreader/fonts/primer" "$STAGE/koreader/screensavers/primer" "$STAGE/extensions"
 cp -R "$ROOT/src/plugins/." "$STAGE/koreader/plugins/"
 cp "$ROOT"/src/patches/*.lua "$STAGE/koreader/patches/"
 cp "$ROOT"/src/fonts/* "$STAGE/koreader/fonts/primer/"
+cp -R "$ROOT/src/screensavers/." "$STAGE/koreader/screensavers/primer/"
 cp -R "$ROOT/src/extensions/." "$STAGE/extensions/"
 if [ -d "$ROOT/vendor/dict" ] && [ -n "$(ls -A "$ROOT/vendor/dict")" ]; then
 	mkdir -p "$STAGE/koreader/data/dict"

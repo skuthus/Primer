@@ -130,13 +130,34 @@ function Settings:pages()
         { kind = "toggle", title = _("Refresh at each new chapter"),
             get = function() return G_reader_settings:nilOrTrue("voyage_chapter_flash") end,
             set = function(on) G_reader_settings:saveSetting("voyage_chapter_flash", on) end },
+        -- Sleep screen: an image collection (the Kindle's own, or one of Primer's), the book's
+        -- cover, or none. A collection is KOReader's random image from that collection's folder.
         (function()
-            local get, set = setting("screensaver_type", "random_image")
-            return { kind = "choice", title = _("Sleep screen"),
-                choices = Device:isKindle()
-                    and { { _("Kindle illustrations"), "random_image" }, { _("Book cover"), "cover" }, { _("None"), "disable" } }
-                    or { { _("Book cover"), "cover" }, { _("None"), "disable" } },
-                get = get, set = set }
+            local collections = plugin:sleepCollections()
+            local choices = {}
+            for __, c in ipairs(collections) do table.insert(choices, { c.label, c.id }) end
+            table.insert(choices, { _("Book cover"), "cover" })
+            table.insert(choices, { _("None"), "disable" })
+            return { kind = "choice", title = _("Sleep screen"), choices = choices,
+                get = function()
+                    local kind = G_reader_settings:readSetting("screensaver_type", "random_image")
+                    if kind ~= "random_image" then return kind end
+                    local dir = G_reader_settings:readSetting("screensaver_dir")
+                    for __, c in ipairs(collections) do
+                        if c.dir == dir then return c.id end
+                    end
+                    return collections[1] and collections[1].id or "cover"
+                end,
+                set = function(v)
+                    for __, c in ipairs(collections) do
+                        if c.id == v then
+                            G_reader_settings:saveSetting("screensaver_type", "random_image")
+                            G_reader_settings:saveSetting("screensaver_dir", c.dir)
+                            return
+                        end
+                    end
+                    G_reader_settings:saveSetting("screensaver_type", v)
+                end }
         end)(),
     } end }
 

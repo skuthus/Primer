@@ -429,6 +429,29 @@ do
     end
 end
 
+-- Sleep screen collections: the Kindle's own illustrations (Kindle only), then Primer's public
+-- domain sets, installed to koreader/screensavers/primer/<id> (credits in CREDITS.md there).
+local SLEEP_COLLECTIONS = {
+    { id = "dore", label = _("Doré engravings") },
+    { id = "tenniel", label = _("Tenniel's Alice") },
+    { id = "hiroshige", label = _("Japanese woodblocks") },
+    { id = "haeckel", label = _("Haeckel's nature forms") },
+}
+
+function VoyagePanel:sleepCollections()
+    local list = {}
+    if Device:isKindle() then
+        table.insert(list, { id = "kindle", label = _("Kindle illustrations"), dir = "/mnt/us/screensavers" })
+    end
+    local base = require("datastorage"):getFullDataDir() .. "/screensavers/primer/"
+    for __, c in ipairs(SLEEP_COLLECTIONS) do
+        if lfs.attributes(base .. c.id, "mode") == "directory" then
+            table.insert(list, { id = c.id, label = c.label, dir = base .. c.id })
+        end
+    end
+    return list
+end
+
 -- Stock Kindle sleep screens: copy them where KOReader's random-image screensaver can use
 -- them (once; tools/stock-screensavers.sh only copies files that are missing).
 do

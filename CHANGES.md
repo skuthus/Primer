@@ -110,6 +110,9 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Release zip**: `tools/package.sh` (optionally with KOReader and a dictionary), `INSTALL.txt` guide, `VERSION`.
 - [x] **Sleep after 10 minutes, like a Kindle** (2026-10-10, confirmed by user): setup v2 fills in `auto_suspend_timeout_seconds = 600` where unset (new installs and updates); Settings > Device options > Sleep after shows 10 minutes by default (was KOReader's 15).
 
+### Sleep screens (2026-10-10, confirmed by user)
+- [x] **Four more sleep screen collections**, chosen in Settings > Screen and brightness > Sleep screen (alongside Kindle illustrations, Book cover, None): Doré engravings (Inferno, Paradise Lost), Tenniel's Alice, Japanese woodblocks (Hiroshige's Hundred Famous Views of Edo), Haeckel's nature forms. 15 images each, public domain from Wikimedia Commons, 1072×1448 greyscale JPEG, scaled to fill the screen and centre-cropped (no white bars; Hiroshige zoomed a little more to trim paper margins), 38 MB in all, installed to `koreader/screensavers/primer/`; sources in `src/screensavers/CREDITS.md`.
+
 ### Gestures
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 

@@ -11,6 +11,8 @@ cp -RX "$ROOT/src/extensions/." "$KINDLE/extensions/"
 rm -rf "$KINDLE/extensions/voyage" # the KUAL extension's old name
 # Bundled open fonts (used when the Kindle's own fonts aren't there).
 mkdir -p "$KINDLE/koreader/fonts/primer" && cp -X "$ROOT"/src/fonts/* "$KINDLE/koreader/fonts/primer/"
-find "$KINDLE/koreader/plugins" "$KINDLE/koreader/patches" "$KINDLE/extensions" "$KINDLE/koreader/fonts/primer" -name '._*' -delete
+# Sleep screen collections (public domain; see src/screensavers/CREDITS.md).
+mkdir -p "$KINDLE/koreader/screensavers/primer" && cp -RX "$ROOT/src/screensavers/." "$KINDLE/koreader/screensavers/primer/"
+find "$KINDLE/koreader/plugins" "$KINDLE/koreader/patches" "$KINDLE/extensions" "$KINDLE/koreader/fonts/primer" "$KINDLE/koreader/screensavers/primer" -name '._*' -delete
 sync
 echo "Deployed to $KINDLE"
