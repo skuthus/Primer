@@ -26,6 +26,10 @@ tools/deploy.sh
 
 Restart KOReader to load the changes. Errors land in `koreader/crash.log` on the device.
 
+## Dictionary
+
+KO-Plus expects a StarDict dictionary in `koreader/data/dict/` on the Kindle. We use the English-English Wiktionary from [Vuizur/Wiktionary-Dictionaries](https://github.com/Vuizur/Wiktionary-Dictionaries) (`English-English Wiktionary dictionary stardict.tar.gz`, CC BY-SA); unpack it and copy its folder there. It isn't committed here (30 MB).
+
 ## Notes
 
 - Fonts used (Amazon Ember, Bookerly, Caecilia) are the Voyage's built-in system fonts in `/usr/java/lib/fonts`; nothing is bundled.

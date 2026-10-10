@@ -21,6 +21,7 @@ local AaPanel = require("aapanel")
 local Dialog = require("dialog")
 local PageFlip = require("pageflip")
 local GoTo = require("goto")
+local Lookup = require("lookup")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -70,6 +71,70 @@ do
                 return true
             end
             return orig(self, ges)
+        end
+    end
+end
+
+-- Kindle-style word lookup: dictionary results show as a card plus a selection bar, and a
+-- new multi-word selection shows the bar instead of KOReader's highlight dialog. Wikipedia
+-- lookups and taps on existing highlights keep KOReader's own windows.
+do
+    local ReaderDictionary = require("apps/reader/modules/readerdictionary")
+    if not ReaderDictionary._voyage_hooked then
+        ReaderDictionary._voyage_hooked = true
+        local orig_showDict = ReaderDictionary.showDict
+        function ReaderDictionary:showDict(word, results, boxes, link, dict_close_callback)
+            local plugin = self.ui and self.ui.voyagepanel
+            if not (plugin and self.ui.document and not self.is_wiki and results and results[1]
+                    and G_reader_settings:nilOrTrue("voyage_kindle_lookup")) then
+                return orig_showDict(self, word, results, boxes, link, dict_close_callback)
+            end
+            self:dismissLookupInfo()
+            local highlight = self.highlight
+            plugin:showLookup{
+                highlight = highlight,
+                word = word,
+                results = results,
+                boxes = boxes,
+                on_close = dict_close_callback,
+                full_lookup = function()
+                    orig_showDict(self, word, results, boxes, link, dict_close_callback)
+                end,
+                more_menu = highlight and function()
+                    -- Straight to KOReader's full highlight dialog (bypassing our bar hook).
+                    highlight._voyage_full_menu = true
+                    highlight:onShowHighlightMenu()
+                    highlight._voyage_full_menu = nil
+                end,
+            }
+        end
+    end
+
+    local ReaderHighlight = require("apps/reader/modules/readerhighlight")
+    if not ReaderHighlight._voyage_hooked then
+        ReaderHighlight._voyage_hooked = true
+        local orig_menu = ReaderHighlight.onShowHighlightMenu
+        function ReaderHighlight:onShowHighlightMenu(index)
+            local plugin = self.ui and self.ui.voyagepanel
+            if index or self._voyage_full_menu or not (plugin and self.selected_text and self.hold_pos)
+                    or not G_reader_settings:nilOrTrue("voyage_kindle_lookup") then
+                return orig_menu(self, index)
+            end
+            local boxes = {}
+            for i, sbox in ipairs(self.selected_text.sboxes or {}) do
+                boxes[i] = self.view:pageToScreenTransform(self.hold_pos.page, sbox)
+            end
+            plugin:showLookup{
+                highlight = self,
+                word = self.selected_text.text,
+                boxes = boxes,
+                more_menu = function()
+                    -- KOReader's full highlight dialog, for everything the bar doesn't cover.
+                    self._voyage_full_menu = true
+                    orig_menu(self)
+                    self._voyage_full_menu = nil
+                end,
+            }
         end
     end
 end
@@ -284,6 +349,20 @@ function VoyagePanel:showPageFlip()
     end
 end
 
+function VoyagePanel:showLookup(args)
+    if self.lookup then UIManager:close(self.lookup) end
+    local ok, err = pcall(function()
+        args.plugin = self
+        self.lookup = Lookup:new(args)
+        UIManager:show(self.lookup)
+    end)
+    if not ok then
+        logger.err("VoyageLookup: failed to open:", err)
+        self.lookup = nil
+        UIManager:show(InfoMessage:new{ text = "Lookup error:\n" .. tostring(err) })
+    end
+end
+
 -- Go To: Kindle-style chapter list.
 function VoyagePanel:showGoTo()
     if self.goto_view or not self.ui.document then return end
@@ -448,6 +527,7 @@ function VoyagePanel:onCloseWidget()
     if self.aapanel then UIManager:close(self.aapanel) end
     if self.pageflip then UIManager:close(self.pageflip) end
     if self.goto_view then UIManager:close(self.goto_view) end
+    if self.lookup then UIManager:close(self.lookup) end
 end
 
 function VoyagePanel:showPanel()

@@ -32,6 +32,13 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
 
+### Dictionary
+- [x] **Kindle-style dictionary.** (Installed 2026-10-10; confirmed by user.) Modeled on `design/reference/kindle-dictionary-photo.webp`.
+  - Dictionary: English-English Wiktionary (462k entries, CC BY-SA, github.com/Vuizur/Wiktionary-Dictionaries, the source KOReader's catalog uses) in `koreader/data/dict/`. The Voyage's built-in Oxford dictionaries are DRM-protected Amazon files KOReader can't read.
+  - Long-press a word: a card on the opposite half of the screen (Dictionary header, bold headword, italic part of speech, numbered senses in Bookerly, dictionary name ▸ at the bottom opens KOReader's full lookup). Swipe up/down for long entries (laid out a page at a time); swipe sideways between results when there are several.
+  - Selection bar by the word: Highlight | Note | Copy | Search | ⋮ (KOReader's full highlight menu). Multi-word selections get the bar only. Tap elsewhere to dismiss.
+  - Parser unit-tested on real entries (run, set, lead, café, extraordinary) with a Lua VM.
+
 ### Go To
 - [x] **Kindle-style Go To with chapters.** (Installed 2026-10-09 as `voyagepanel.koplugin/goto.lua`; confirmed by user.) Opens from the toolbar's Go To and the page flip's contents icon. Chapters with page numbers (sub-chapters indented), current chapter bold with a margin bar, opens on the current chapter's page of the list; tap to jump (Back returns). "Page…" for a page number, Notes tab for highlights/bookmarks; swipe or page buttons for long contents.
 
