@@ -100,12 +100,6 @@ do
                 full_lookup = function()
                     orig_showDict(self, word, results, boxes, link, dict_close_callback)
                 end,
-                more_menu = highlight and function()
-                    -- Straight to KOReader's full highlight dialog (bypassing our bar hook).
-                    highlight._voyage_full_menu = true
-                    highlight:onShowHighlightMenu()
-                    highlight._voyage_full_menu = nil
-                end,
             }
         end
     end
@@ -116,7 +110,7 @@ do
         local orig_menu = ReaderHighlight.onShowHighlightMenu
         function ReaderHighlight:onShowHighlightMenu(index)
             local plugin = self.ui and self.ui.voyagepanel
-            if index or self._voyage_full_menu or not (plugin and self.selected_text and self.hold_pos)
+            if index or not (plugin and self.selected_text and self.hold_pos)
                     or not G_reader_settings:nilOrTrue("voyage_kindle_lookup") then
                 return orig_menu(self, index)
             end
@@ -128,12 +122,6 @@ do
                 highlight = self,
                 word = self.selected_text.text,
                 boxes = boxes,
-                more_menu = function()
-                    -- KOReader's full highlight dialog, for everything the bar doesn't cover.
-                    self._voyage_full_menu = true
-                    orig_menu(self)
-                    self._voyage_full_menu = nil
-                end,
             }
         end
     end

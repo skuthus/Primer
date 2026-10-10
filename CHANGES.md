@@ -36,7 +36,8 @@ Running list of changes for the curated build. `[~]` = installed, awaiting test 
 - [x] **Kindle-style dictionary.** (Installed 2026-10-10; confirmed by user.) Modeled on `design/reference/kindle-dictionary-photo.webp`.
   - Dictionary: English-English Wiktionary (462k entries, CC BY-SA, github.com/Vuizur/Wiktionary-Dictionaries, the source KOReader's catalog uses) in `koreader/data/dict/`. The Voyage's built-in Oxford dictionaries are DRM-protected Amazon files KOReader can't read.
   - Long-press a word: a card on the opposite half of the screen (Dictionary header, bold headword, italic part of speech, numbered senses in Bookerly, dictionary name ▸ at the bottom opens KOReader's full lookup). Swipe up/down for long entries (laid out a page at a time); swipe sideways between results when there are several.
-  - Selection bar by the word: Highlight | Note | Copy | Search | ⋮ (KOReader's full highlight menu). Multi-word selections get the bar only. Tap elsewhere to dismiss.
+  - Selection bar by the word: Highlight | Note | Copy | Search, plus ⋮ only when there are extras. Multi-word selections get the bar only. Tap elsewhere to dismiss.
+  - ⋮ is a Kindle-style dropdown of what's left of KOReader's highlight menu after removing Select, Wikipedia, Translate, QR code, Dictionary, View HTML and the bar duplicates (Highlight, Copy, Note, Search): in practice Follow Link (on links) and Hyphenate. Confirmed by user.
   - Parser unit-tested on real entries (run, set, lead, café, extraordinary) with a Lua VM.
 
 ### Go To

@@ -18,6 +18,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
+local ffiUtil = require("ffi/util")
 local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
@@ -122,6 +123,13 @@ local function parseDefinition(definition, is_html)
     return blocks
 end
 
+-- KOReader highlight-dialog entries the ⋮ menu leaves out: unused here, or already on the bar.
+local HIDDEN_MENU_ITEMS = {
+    ["01_select"] = true, ["02_highlight"] = true, ["03_copy"] = true, ["04_add_note"] = true,
+    ["05_wikipedia"] = true, ["06_dictionary"] = true, ["07_translate"] = true,
+    ["09_view_html"] = true, ["12_generate_qr_code"] = true, ["12_search"] = true,
+}
+
 -- "English-English Wiktionary dictionary (en-en)" -> "Wiktionary"
 local function shortDictName(name)
     if not name or name == "" then return _("Dictionary") end
@@ -136,7 +144,6 @@ local Lookup = InputContainer:extend{
     results = nil,      -- dictionary results, nil for a multi-word selection (bar only)
     boxes = nil,        -- screen boxes of the selection
     full_lookup = nil,  -- function: open KOReader's full lookup window
-    more_menu = nil,    -- function: KOReader's full highlight menu
 }
 
 function Lookup:init()
@@ -203,7 +210,9 @@ function Lookup:layout()
         self.bar_items[i] = { id = ({ "highlight", "note", "copy" })[i], label = label, x = x, w = w }
         x = x + w
     end
-    for __, icon in ipairs({ "search", "kebab" }) do
+    -- ⋮ only when there's something beyond the bar (Follow Link, Hyphenate, plugin extras).
+    self.menu_items = self:extraMenuItems()
+    for __, icon in ipairs(#self.menu_items > 0 and { "search", "kebab" } or { "search" }) do
         local w = round(100 * u)
         table.insert(self.bar_items, { id = icon, icon = icon, x = x, w = w })
         x = x + w
@@ -223,6 +232,40 @@ function Lookup:layout()
         by = round(H * 0.6)
     end
     self.bar = Geom:new{ x = bx, y = round(by), w = bar_w, h = self.bar_h }
+end
+
+-- KOReader's highlight-dialog buttons that apply to this selection, minus the hidden ones.
+function Lookup:extraMenuItems()
+    local hl, items = self.highlight, {}
+    if not (hl and hl._highlight_buttons and hl.selected_text) then return items end
+    for id, make in ffiUtil.orderedPairs(hl._highlight_buttons) do
+        if not HIDDEN_MENU_ITEMS[id] then
+            local ok, button = pcall(make, hl)
+            if ok and button and button.text and button.callback
+                    and (not button.show_in_highlight_dialog_func or button.show_in_highlight_dialog_func()) then
+                table.insert(items, { text = button.text, callback = button.callback })
+            end
+        end
+    end
+    return items
+end
+
+-- Dropdown under (or over) the ⋮ button, styled like the bar.
+function Lookup:layoutMenu()
+    local u, b = self.u, self.bar
+    local row_h = round(84 * u)
+    local w = round(360 * u)
+    for __, item in ipairs(self.menu_items) do
+        w = math.max(w, self:text(item.text, self.face_button):getSize().w + round(80 * u))
+    end
+    local h = row_h * #self.menu_items
+    local kebab = self.bar_items[#self.bar_items]
+    local x = math.min(b.x + kebab.x + kebab.w - w, self.W - w - round(20 * u))
+    x = math.max(x, round(20 * u))
+    local y = b.y + b.h - math.max(1, round(2 * u))
+    if y + h > self.H - round(20 * u) then y = b.y - h + math.max(1, round(2 * u)) end
+    self.menu = Geom:new{ x = round(x), y = round(y), w = w, h = h }
+    self.menu_row_h = row_h
 end
 
 function Lookup:text(str, f, max_width)
@@ -395,6 +438,22 @@ function Lookup:paintLookup(bb, x, y)
             bb:invertRect(ix + line, y + b.y + line, item.w - line, b.h - 2 * line)
         end
     end
+
+    -- ⋮ dropdown
+    local m = self.menu
+    if m then
+        bb:paintRect(x + m.x, y + m.y, m.w, m.h, WHITE)
+        bb:paintBorder(x + m.x, y + m.y, m.w, m.h, line, BLACK)
+        for i, item in ipairs(self.menu_items) do
+            local ry = y + m.y + (i - 1) * self.menu_row_h
+            if i > 1 then bb:paintRect(x + m.x, ry, m.w, line, BLACK) end
+            local t = self:text(item.text, self.face_button)
+            t:paintTo(bb, x + m.x + round(40 * u), ry + round((self.menu_row_h - t:getSize().h) / 2))
+            if self.menu_pressed == i then
+                bb:invertRect(x + m.x + line, ry + line, m.w - 2 * line, self.menu_row_h - line)
+            end
+        end
+    end
 end
 
 function Lookup:refresh(region, mode)
@@ -424,13 +483,37 @@ function Lookup:barAction(id)
         self:dismiss(true)
         hl:onHighlightSearch()
     elseif id == "kebab" then
-        self:dismiss(true)
-        if self.more_menu then self.more_menu() end
+        -- Toggle the dropdown in place.
+        self.pressed = nil
+        if self.menu then
+            local old = self.menu
+            self.menu = nil
+            UIManager:setDirty(nil, function() return "ui", old end)
+            self:refresh(self.bar)
+        else
+            self:layoutMenu()
+            self:refresh(self.bar)
+            self:refresh(self.menu)
+        end
     end
 end
 
 function Lookup:onTap(__, ges)
     local pos = ges.pos
+    if self.menu and inside(pos, self.menu) then
+        local i = math.floor((pos.y - self.menu.y) / self.menu_row_h) + 1
+        local item = self.menu_items[i]
+        if item then
+            self.menu_pressed = i
+            self:refresh(self.menu, "fast")
+            UIManager:forceRePaint()
+            UIManager:scheduleIn(0.12, function()
+                self:dismiss(true)
+                item.callback()
+            end)
+        end
+        return true
+    end
     if self.bar and inside(pos, self.bar) then
         for i, item in ipairs(self.bar_items) do
             local r = Geom:new{ x = self.bar.x + item.x, y = self.bar.y, w = item.w, h = self.bar.h }
@@ -500,6 +583,7 @@ function Lookup:onCloseWidget()
     self.plugin.lookup = nil
     if self.card then UIManager:setDirty(nil, function() return "ui", self.card end) end
     if self.bar then UIManager:setDirty(nil, function() return "ui", self.bar end) end
+    if self.menu then UIManager:setDirty(nil, function() return "ui", self.menu end) end
     if self.on_close then self.on_close() end
     if not self.keep_selection and self.highlight then
         self.highlight:clear()
