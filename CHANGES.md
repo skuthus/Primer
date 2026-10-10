@@ -104,6 +104,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [ ] **Layout:** sizes scale from a 1072px-wide screen; to be tuned as other devices are tested.
 
 ## Done
+- [x] Aa Font Family list on Kindles includes Primer's bundled fonts folder, so Literata/Bitter (now resolved to the bundled copies) show again, plus Inter (2026-10-10).
 - [x] Renamed KO-Plus → Primer (2026-10-10): visible strings, KUAL menu, About ("Built on KOReader" credit), repo.
 - [x] Start with the last book (KOReader `start_with = "last"`), on boot and after the USB handoff; confirmed 2026-10-09.
 - [x] Library reorganized 2026-10-09: author folders removed (backup in `backup/author-folders-2026-10-09`), 197 Calibre EPUBs copied flat to `documents/` as `Title - Author.epub` (full titles from Calibre's metadata.opf). KFX store books left untouched.

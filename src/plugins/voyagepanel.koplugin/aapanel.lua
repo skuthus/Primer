@@ -364,7 +364,9 @@ function AaPanel:fontList()
         -- whatever KOReader has, minus KOReader's UI/symbol fonts.
         local hidden
         if Device:isKindle() then
-            hidden = not file or not (file:find("^/usr/java/lib/fonts/") or file:find("^/mnt/us/fonts/"))
+            -- (Primer's bundled fonts count too: KOReader may resolve Literata/Bitter to those copies.)
+            hidden = not file or not (file:find("^/usr/java/lib/fonts/") or file:find("^/mnt/us/fonts/")
+                or file:find("fonts/primer/", 1, true))
         else
             hidden = not file or file:find("nerdfonts", 1, true) ~= nil
         end
