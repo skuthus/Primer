@@ -1,6 +1,11 @@
--- Device settings (top level of settings.reader.lua), applied by patches/2-primer-setup.lua on
--- first run. These set Primer's look and behaviour, so they replace KOReader's values.
+-- Device settings (top level of settings.reader.lua), applied by patches/2-primer-setup.lua.
+-- "all" and "kindle" set Primer's look and behaviour on a new install, replacing KOReader's
+-- values; "unset" fills in only where there's no value yet, on new installs and updates alike.
 return {
+    unset = {
+        -- Sleep (and show the lock screen) after 10 minutes without use, like a Kindle.
+        auto_suspend_timeout_seconds = 600,
+    },
     all = {
         -- Open the last book on startup (boot, and after the USB handoff relaunches Primer).
         start_with = "last",

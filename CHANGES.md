@@ -108,6 +108,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Device name** defaults to the Kindle's own registered name (reginfo) instead of a hard-coded one.
 - [x] KUAL extension renamed `extensions/primer` (dev probe "Find device name" removed); the old `extensions/voyage` is removed on deploy.
 - [x] **Release zip**: `tools/package.sh` (optionally with KOReader and a dictionary), `INSTALL.txt` guide, `VERSION`.
+- [x] **Sleep after 10 minutes, like a Kindle** (2026-10-10, confirmed by user): setup v2 fills in `auto_suspend_timeout_seconds = 600` where unset (new installs and updates); Settings > Device options > Sleep after shows 10 minutes by default (was KOReader's 15).
 
 ### Gestures
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.

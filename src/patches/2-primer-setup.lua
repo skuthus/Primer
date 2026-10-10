@@ -7,7 +7,7 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 1
+local SETUP_VERSION = 2 -- 2: sleep after 10 minutes, like a Kindle
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -40,9 +40,15 @@ for key in pairs(G_reader_settings.data) do
     end
 end
 
+local device = readDefaults("device")
+
+-- Defaults that never override a choice (new installs and updates).
+for k, v in pairs(device and device.unset or {}) do
+    if not G_reader_settings:has(k) then G_reader_settings:saveSetting(k, v) end
+end
+
 -- Look and behaviour (new installs only).
-local device = not existing_primer and readDefaults("device")
-if device then
+if device and not existing_primer then
     for k, v in pairs(device.all or {}) do G_reader_settings:saveSetting(k, v) end
     if Device:isKindle() then
         for k, v in pairs(device.kindle or {}) do G_reader_settings:saveSetting(k, v) end

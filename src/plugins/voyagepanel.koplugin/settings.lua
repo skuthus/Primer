@@ -62,7 +62,7 @@ function Settings:pages()
             run = function() plugin:showWifiNetworks() end },
     } end }
 
-    local sleep_get, sleep_set = setting("auto_suspend_timeout_seconds", 900)
+    local sleep_get, sleep_set = setting("auto_suspend_timeout_seconds", 600)
     P.device = { title = _("Device options"), rows = function() return {
         { kind = "info", title = _("Battery"),
             subtitle = string.format("%d%%%s", Device:getPowerDevice():getCapacity(),
