@@ -22,6 +22,7 @@ local Dialog = require("dialog")
 local PageFlip = require("pageflip")
 local GoTo = require("goto")
 local Lookup = require("lookup")
+local NotePopup = require("notes")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -123,6 +124,27 @@ do
                 word = self.selected_text.text,
                 boxes = boxes,
             }
+        end
+
+        -- Tapping an existing highlight: the same bar (Delete | Note | Copy | Search), with the
+        -- note in a card when there is one, instead of KOReader's note viewer / edit dialog.
+        local orig_note_or_dialog = ReaderHighlight.showHighlightNoteOrDialog
+        function ReaderHighlight:showHighlightNoteOrDialog(index)
+            local plugin = self.ui and self.ui.voyagepanel
+            local anno = self.ui.annotation.annotations[index]
+            if not (plugin and anno and G_reader_settings:nilOrTrue("voyage_kindle_lookup")) then
+                return orig_note_or_dialog(self, index)
+            end
+            local boxes = self:getHighlightVisibleBoxes(index) or {}
+            if self.ui.paging then
+                local page = anno.pos0.page
+                for i, box in ipairs(boxes) do boxes[i] = self.view:pageToScreenTransform(page, box) end
+            end
+            if anno.note and anno.note:match("%S") then
+                plugin:showNote{ highlight = self, index = index, boxes = boxes }
+            else
+                plugin:showLookup{ highlight = self, annotation_index = index, boxes = boxes }
+            end
         end
     end
 end
@@ -351,6 +373,20 @@ function VoyagePanel:showLookup(args)
     end
 end
 
+function VoyagePanel:showNote(args)
+    if self.note_popup then UIManager:close(self.note_popup) end
+    local ok, err = pcall(function()
+        args.plugin = self
+        self.note_popup = NotePopup:new(args)
+        UIManager:show(self.note_popup)
+    end)
+    if not ok then
+        logger.err("VoyageNote: failed to open:", err)
+        self.note_popup = nil
+        UIManager:show(InfoMessage:new{ text = "Note error:\n" .. tostring(err) })
+    end
+end
+
 -- Go To: Kindle-style chapter list.
 function VoyagePanel:showGoTo()
     if self.goto_view or not self.ui.document then return end
@@ -516,6 +552,7 @@ function VoyagePanel:onCloseWidget()
     if self.pageflip then UIManager:close(self.pageflip) end
     if self.goto_view then UIManager:close(self.goto_view) end
     if self.lookup then UIManager:close(self.lookup) end
+    if self.note_popup then UIManager:close(self.note_popup) end
 end
 
 function VoyagePanel:showPanel()

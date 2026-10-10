@@ -144,6 +144,8 @@ local Lookup = InputContainer:extend{
     results = nil,      -- dictionary results, nil for a multi-word selection (bar only)
     boxes = nil,        -- screen boxes of the selection
     full_lookup = nil,  -- function: open KOReader's full lookup window
+    annotation_index = nil, -- set when this is an existing highlight (bar: Delete | Note | Copy | Search)
+    card_title = nil,   -- card header, "Dictionary" by default
 }
 
 function Lookup:init()
@@ -202,16 +204,17 @@ function Lookup:layout()
     -- (only when the lookup came from a text selection).
     if not self.highlight then return end
     self.bar_h = round(80 * u)
-    local labels = { _("Highlight"), _("Note"), _("Copy") }
+    local existing = self.annotation_index ~= nil
+    local first = existing and { "delete", _("Delete") } or { "highlight", _("Highlight") }
     self.bar_items = {}
     local x = 0
-    for i, label in ipairs(labels) do
-        local w = self:text(label, self.face_button):getSize().w + round(56 * u)
-        self.bar_items[i] = { id = ({ "highlight", "note", "copy" })[i], label = label, x = x, w = w }
+    for i, item in ipairs({ first, { "note", _("Note") }, { "copy", _("Copy") } }) do
+        local w = self:text(item[2], self.face_button):getSize().w + round(56 * u)
+        self.bar_items[i] = { id = item[1], label = item[2], x = x, w = w }
         x = x + w
     end
     -- ⋮ only when there's something beyond the bar (Follow Link, Hyphenate, plugin extras).
-    self.menu_items = self:extraMenuItems()
+    self.menu_items = existing and {} or self:extraMenuItems()
     for __, icon in ipairs(#self.menu_items > 0 and { "search", "kebab" } or { "search" }) do
         local w = round(100 * u)
         table.insert(self.bar_items, { id = icon, icon = icon, x = x, w = w })
@@ -291,7 +294,8 @@ function Lookup:buildCard()
     self.body_h = card.h - self.header_h - self.footer_h - round(30 * u)
     self.text_w = card.w - 2 * self.pad - round(24 * u) -- room for the scrollbar
 
-    local blocks = { { kind = "head", text = result.word or self.word or "" } }
+    local head = result.word or self.word
+    local blocks = head and { { kind = "head", text = head } } or {}
     for __, b in ipairs(parseDefinition(result.definition or "", result.is_html)) do table.insert(blocks, b) end
     self.blocks = blocks
     self.page_starts = { 1 }
@@ -373,7 +377,8 @@ function Lookup:paintLookup(bb, x, y)
         bb:paintBorder(x + c.x, y + c.y, c.w, c.h, border, BLACK)
         -- Header
         local multi = #self.results > 1
-        local header = self:text(multi and (_("Dictionary") .. "  ▾") or _("Dictionary"), self.face_header)
+        local title = self.card_title or _("Dictionary")
+        local header = self:text(multi and (title .. "  ▾") or title, self.face_header)
         header:paintTo(bb, x + c.x + round(18 * u), y + c.y + round((self.header_h - header:getSize().h) / 2))
         bb:paintRect(x + c.x + round(18 * u), y + c.y + self.header_h, c.w - round(36 * u), line, Blitbuffer.COLOR_GRAY)
         if multi then
@@ -410,11 +415,13 @@ function Lookup:paintLookup(bb, x, y)
             bb:paintRect(sx - line, ty, line * 3, thumb_h, BLACK)
         end
         -- Footer: dictionary name ▸ (opens KOReader's full lookup)
-        local result = self.results[self.result_idx] or {}
-        local footer = self:text(shortDictName(result.dict) .. "  ▸", self.face_footer)
-        self.footer_hit = Geom:new{ x = c.x + c.w / 2, y = c.y + c.h - self.footer_h, w = c.w / 2, h = self.footer_h }
-        footer:paintTo(bb, x + c.x + c.w - round(24 * u) - footer:getSize().w,
-            y + c.y + c.h - self.footer_h + round((self.footer_h - footer:getSize().h) / 2))
+        if self.full_lookup then
+            local result = self.results[self.result_idx] or {}
+            local footer = self:text(shortDictName(result.dict) .. "  ▸", self.face_footer)
+            self.footer_hit = Geom:new{ x = c.x + c.w / 2, y = c.y + c.h - self.footer_h, w = c.w / 2, h = self.footer_h }
+            footer:paintTo(bb, x + c.x + c.w - round(24 * u) - footer:getSize().w,
+                y + c.y + c.h - self.footer_h + round((self.footer_h - footer:getSize().h) / 2))
+        end
     end
 
     -- Selection bar
@@ -467,13 +474,35 @@ end
 
 function Lookup:barAction(id)
     local hl = self.highlight
+    local index = self.annotation_index
+    if index then
+        -- Existing highlight
+        local anno = hl.ui.annotation.annotations[index]
+        self:dismiss(true)
+        if id == "delete" then
+            hl:deleteHighlight(index)
+        elseif id == "note" then
+            self.plugin:showNote{ highlight = hl, index = index, boxes = self.boxes, editing = true }
+        elseif id == "copy" then
+            Device.input.setClipboardText(util.cleanupSelectedText(anno and anno.text or ""))
+            UIManager:show(InfoMessage:new{ text = _("Copied"), timeout = 1 })
+        elseif id == "search" then
+            hl.ui.search:searchText(util.cleanupSelectedText(anno and anno.text or ""))
+        end
+        return
+    end
     if id == "highlight" then
         self:dismiss(true)
         hl:saveHighlight()
         hl:clear()
     elseif id == "note" then
+        -- Save the highlight to carry the note; cancelling the note removes it again.
         self:dismiss(true)
-        hl:addNote()
+        local new_index = hl:saveHighlight()
+        hl:clear()
+        if new_index then
+            self.plugin:showNote{ highlight = hl, index = new_index, boxes = self.boxes, editing = true, is_new = true }
+        end
     elseif id == "copy" then
         local text = hl.selected_text and hl.selected_text.text or self.word or ""
         Device.input.setClipboardText(util.cleanupSelectedText(text))
