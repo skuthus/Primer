@@ -700,9 +700,13 @@ end
 function VoyagePanel:showBookSearch(text)
     local search = self.ui.search
     if not (search and self.ui.document) then return end
+    -- Offer the last search again only if it's a word or phrase, not a long passage searched
+    -- from a selection.
+    text = text or search.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text") or ""
+    if #text > 40 or text:find("\n") then text = "" end
     UIManager:show(SearchBar:new{
         plugin = self,
-        text = text or search.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text") or "",
+        text = text,
         hint = _("Search this book"),
         on_done = function(query)
             if not query:match("%S") then return end

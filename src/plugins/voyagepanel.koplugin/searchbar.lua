@@ -50,12 +50,16 @@ function SearchBar:init()
     -- Field: rounded box from the left edge to Cancel, magnifier inside on the left.
     self.field = Geom:new{ x = pad, y = round(22 * u), w = self.cancel_hit.x - pad - round(10 * u), h = self.bar.h - round(44 * u) }
     local icon_room = round(64 * u)
+    local face = Fonts.face("ui", 18)
     self.input = InputText:new{
         text = self.text,
         hint = self.hint or _("Search your library"),
-        face = Fonts.face("ui", 18),
+        face = face,
         width = self.field.w - icon_room - round(20 * u),
-        height = nil,
+        -- Always one line (as tall as a line of text box text), scrolling with the cursor,
+        -- so long text never spills out of the field.
+        height = math.floor(face.size * 1.3 + 0.5),
+        scroll = true,
         padding = 0, margin = 0, bordersize = 0,
         focused = true,
         parent = self,
