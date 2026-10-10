@@ -338,7 +338,7 @@ function PageFlip:tool(id)
             return { { text = text, callback = function() UIManager:close(dialog) fn() end } }
         end
         dialog = ButtonDialog:new{ buttons = {
-            item(_("Notes"), function() ui.bookmark:onShowBookmark() end),
+            item(_("Notes"), function() self.plugin:showNotebook() end),
             item(_("Book description"), function() ui.bookinfo:onShowBookInfo() end),
             item(_("Reading statistics"), function() if ui.statistics then ui.statistics:onShowBookStats() end end),
             item(_("Rotate"), function() ui:handleEvent(Event:new("SwapRotation")) end),

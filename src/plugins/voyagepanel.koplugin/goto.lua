@@ -206,7 +206,7 @@ function GoTo:onTap(__, ges)
     end
     if inside(pos, self.notes_tab) then
         self:onClose()
-        self.ui.bookmark:onShowBookmark()
+        self.plugin:showNotebook()
         return true
     end
     if pos.y >= self.list_y then

@@ -321,7 +321,7 @@ function NotePopup:onTap(__, ges)
     end
     if not self.editing and inside(pos, self.all_hit) then
         self:close()
-        self.ui.bookmark:onShowBookmark()
+        self.plugin:showNotebook("note")
         return true
     end
     for __, hit in ipairs(self.action_hits or {}) do

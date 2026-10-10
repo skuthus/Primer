@@ -296,7 +296,7 @@ function Toolbar:act(id)
     elseif id == "kebab" then
         self:onClose()
         self:menu(nil, {
-            { _("Notes"), function() ui.bookmark:onShowBookmark() end },
+            { _("Notes"), function() self.plugin:showNotebook() end },
             { _("Book description"), function() ui.bookinfo:onShowBookInfo() end },
             { _("Reading statistics"), function() if ui.statistics then ui.statistics:onShowBookStats() end end },
             { _("Rotate"), function() ui:handleEvent(Event:new("SwapRotation")) end },

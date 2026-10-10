@@ -23,6 +23,7 @@ local PageFlip = require("pageflip")
 local GoTo = require("goto")
 local Lookup = require("lookup")
 local NotePopup = require("notes")
+local Notebook = require("notebook")
 local Font = require("ui/font")
 local FontChooser = require("ui/widget/fontchooser")
 local TextWidget = require("ui/widget/textwidget")
@@ -387,6 +388,20 @@ function VoyagePanel:showNote(args)
     end
 end
 
+-- Notebook: highlights, notes and bookmarks (optionally opening on one filter).
+function VoyagePanel:showNotebook(filter)
+    if self.notebook or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.notebook = Notebook:new{ plugin = self, filter = filter or "all" }
+        UIManager:show(self.notebook)
+    end)
+    if not ok then
+        logger.err("VoyageNotebook: failed to open:", err)
+        self.notebook = nil
+        UIManager:show(InfoMessage:new{ text = "Notebook error:\n" .. tostring(err) })
+    end
+end
+
 -- Go To: Kindle-style chapter list.
 function VoyagePanel:showGoTo()
     if self.goto_view or not self.ui.document then return end
@@ -553,6 +568,7 @@ function VoyagePanel:onCloseWidget()
     if self.goto_view then UIManager:close(self.goto_view) end
     if self.lookup then UIManager:close(self.lookup) end
     if self.note_popup then UIManager:close(self.note_popup) end
+    if self.notebook then UIManager:close(self.notebook) end
 end
 
 function VoyagePanel:showPanel()
