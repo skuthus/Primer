@@ -85,6 +85,15 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 ### Screen refresh
 - [~] **Kindle-style refresh.** (Installed 2026-10-09.) Flash-free REAGL page turns with no forced flash every N pages (`full_refresh_count = 0`, day and night), no black flashes on menus (`avoid_flashing_ui`), one full refresh at each chapter start (plugin `onPageUpdate`). Watch for ghosting in long chapters; fallback is a refresh every 20–30 pages.
 
+### Remaining KOReader screens (2026-10-10, confirmed by user)
+- [x] **Primer's font everywhere.** Patch `2-primer-ui.lua` swaps KOReader's interface fonts (menus, title bars, dialogs, notifications such as "Size 4", dictionary and book map windows, keyboard labels) to Amazon Ember (Inter off-Kindle); Noto stays as the glyph fallback. Square window corners; full-screen title bars left-aligned over a rule; rounded keyboard keys.
+- [x] **In-book search.** Search (toolbar, page flip, selection bar) opens Primer's top search bar ("Search this book"); results are a full-screen list: "Results for “word”", count, then chapter · page over the passage with the match in bold, paged by swipe or buttons. Tapping a result marks it on the page with a bottom bar: ‹ Previous | 3 of 27 (Back to results) | Next ›; tap the page to keep reading there.
+- [x] **Footnotes.** KOReader's popup (book font) gains a "Footnote" heading and a "Go to Footnote" button.
+- [x] **Go To → Page….** Primer prompt with the number keyboard ("You are on page X of Y", checks the range). Books with publisher page labels keep KOReader's dialog.
+- [x] **End of book.** Turning past the last page marks the book finished and shows a card: "You've finished", title, author, Mark as Unread / Go to Beginning / Library. KOReader's other end-of-book actions are untouched.
+- [x] **Wi-Fi network list.** Replaces KOReader's picker: networks by strength with drawn signal bars and state (Connected / Saved / Secured / Open); tap to connect (password prompt when needed) or disconnect; long-press a saved one for Password / Forget.
+- [x] **Leftover dialogs.** Shared Primer prompt (`prompt.lua`) for Save Current Settings and Rename your Kindle; Manage Themes is a list inside the Aa panel (Delete, confirmed); the page flip's ⋮ uses the same dropdown as the toolbar (`dropdown.lua`: Notebook, Reading Statistics).
+
 ### Gestures
 - [x] **No frontlight toggle on bottom-left corner tap** (library and reader), **no page-flipping toggle on top-left corner tap** (reader). Applied 2026-10-09 in `settings/gestures.lua`, saved in `src/defaults/gestures.lua`; confirmed by user.
 

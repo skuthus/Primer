@@ -25,6 +25,10 @@ local Lookup = require("lookup")
 local NotePopup = require("notes")
 local Notebook = require("notebook")
 local Stats = require("stats")
+local EndCard = require("endcard")
+local WifiList = require("wifilist")
+local SearchBar = require("searchbar")
+local SearchResults = require("searchresults")
 local SettingsView = require("settings")
 local Fonts = require("fonts")
 local lfs = require("libs/libkoreader-lfs")
@@ -99,6 +103,128 @@ do
         function ReaderFlipping:getRollingRenderingStateIconWidget(...)
             if self.ui and self.ui.voyagepanel then return nil end
             return orig(self, ...)
+        end
+    end
+end
+
+-- In-book search: Primer's search bar, results list and result-to-result bar instead of
+-- KOReader's search dialog, results menu and navigation popup. The search itself is KOReader's.
+do
+    local ReaderSearch = require("apps/reader/modules/readersearch")
+    if not ReaderSearch._voyage_hooked then
+        ReaderSearch._voyage_hooked = true
+        local orig_input = ReaderSearch.onShowFulltextSearchInput
+        function ReaderSearch:onShowFulltextSearchInput(search_string)
+            local plugin = self.ui and self.ui.voyagepanel
+            if not plugin then return orig_input(self, search_string) end
+            plugin:showBookSearch(search_string)
+            return true
+        end
+        local orig_results = ReaderSearch.onShowFindAllResults
+        function ReaderSearch:onShowFindAllResults(not_cached)
+            local plugin = self.ui and self.ui.voyagepanel
+            if not plugin then return orig_results(self, not_cached) end
+            if not self.last_search_hash or (not not_cached and self.findall_results == nil) then
+                plugin:showBookSearch()
+                return true
+            end
+            plugin:showSearchResults(self.findall_results_item_index)
+            self:showErrorNotification(#self.findall_results)
+            return true
+        end
+    end
+end
+
+-- Footnote popups, Kindle-style: a "Footnote" heading over the note (still rendered by
+-- KOReader, in the book's font) and a "Go to Footnote" button under it.
+do
+    local FootnoteWidget = require("ui/widget/footnotewidget")
+    if not FootnoteWidget._voyage_hooked then
+        FootnoteWidget._voyage_hooked = true
+        local CenterContainer = require("ui/widget/container/centercontainer")
+        local Geom = require("ui/geometry")
+        local HorizontalGroup = require("ui/widget/horizontalgroup")
+        local HorizontalSpan = require("ui/widget/horizontalspan")
+        local LeftContainer = require("ui/widget/container/leftcontainer")
+        local LineWidget = require("ui/widget/linewidget")
+        local VerticalGroup = require("ui/widget/verticalgroup")
+
+        local function dress(self)
+            local W, H = Screen:getWidth(), Screen:getHeight()
+            local u = W / 1072
+            local pad = math.floor(53 * u + 0.5)
+            local thick = math.max(2, math.floor(3 * u + 0.5))
+            local thin = math.max(1, math.floor(2 * u + 0.5))
+            local header_h, footer_h = math.floor(88 * u + 0.5), math.floor(104 * u + 0.5)
+            local note = self.container[1]
+            -- KOReader's own top border becomes a light rule under the heading.
+            local group = note.ignore and note[1] or note
+            if group[1] and getmetatable(group[1]) == LineWidget then
+                group[1].background = Blitbuffer.COLOR_LIGHT_GRAY
+                group[1].dimen.h = thin
+            end
+            self.container[1] = VerticalGroup:new{
+                LineWidget:new{ dimen = Geom:new{ w = W, h = thick } },
+                LeftContainer:new{
+                    dimen = Geom:new{ w = W, h = header_h },
+                    HorizontalGroup:new{
+                        HorizontalSpan:new{ width = pad },
+                        TextWidget:new{ text = _("Footnote"), face = Fonts.face("ui_bold", 18) },
+                    },
+                },
+                note,
+                LineWidget:new{ dimen = Geom:new{ w = W, h = thin }, background = Blitbuffer.COLOR_LIGHT_GRAY },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = W, h = footer_h },
+                    TextWidget:new{ text = _("Go to Footnote"), face = Fonts.face("ui", 18) },
+                },
+            }
+            self.height = self.height + thick + header_h + thin + footer_h
+            self._voyage_follow = Geom:new{ x = 0, y = H - footer_h, w = W, h = footer_h }
+        end
+
+        local orig_init = FootnoteWidget.init
+        function FootnoteWidget:init()
+            orig_init(self)
+            local ok, err = pcall(dress, self)
+            if not ok then logger.warn("VoyageFootnote: kept KOReader's popup:", err) end
+        end
+
+        local orig_tap = FootnoteWidget.onTapClose
+        function FootnoteWidget:onTapClose(arg, ges)
+            if self._voyage_follow and ges and ges.pos and ges.pos:intersectWith(self._voyage_follow) then
+                return self:onFollow()
+            end
+            return orig_tap(self, arg, ges)
+        end
+    end
+end
+
+-- End of book: Primer's card (book marked as finished) instead of KOReader's "What would you
+-- like to do?" popup. Other end-of-book actions chosen in KOReader's menu are left alone.
+do
+    local ReaderStatus = require("apps/reader/modules/readerstatus")
+    if not ReaderStatus._voyage_hooked then
+        ReaderStatus._voyage_hooked = true
+        local orig = ReaderStatus.onEndOfBook
+        function ReaderStatus:onEndOfBook()
+            local plugin = self.ui and self.ui.voyagepanel
+            local action = G_reader_settings:readSetting("end_document_action") or "pop-up"
+            local quickstart = G_reader_settings:readSetting("lastfile") == require("ui/quickstart").quickstart_filename
+            if not plugin or action ~= "pop-up" or quickstart then return orig(self) end
+            plugin:showEndCard()
+            return true
+        end
+    end
+end
+
+-- Wi-Fi: Primer's network list wherever KOReader would show its network picker.
+do
+    local NetworkSetting = require("ui/widget/networksetting")
+    if not NetworkSetting._voyage_hooked then
+        NetworkSetting._voyage_hooked = true
+        function NetworkSetting.new(__, o)
+            return WifiList:new(o)
         end
     end
 end
@@ -471,6 +597,74 @@ function VoyagePanel:showNotebook(filter)
 end
 
 -- Go To: Kindle-style chapter list.
+-- The reading ⋮ menu (toolbar and page flip). `close_owner` closes the screen it came from.
+function VoyagePanel:readingMenuItems(close_owner)
+    return {
+        { text = _("Notebook"), callback = function() close_owner() self:showNotebook() end },
+        { text = _("Reading Statistics"), callback = function() close_owner() self:showStats() end },
+    }
+end
+
+function VoyagePanel:showBookSearch(text)
+    local search = self.ui.search
+    if not (search and self.ui.document) then return end
+    UIManager:show(SearchBar:new{
+        plugin = self,
+        text = text or search.last_search_text or self.ui.doc_settings:readSetting("fulltext_search_last_search_text") or "",
+        hint = _("Search this book"),
+        on_done = function(query)
+            if not query:match("%S") then return end
+            query = require("ffi/utf8proc").normalize_NFC(query)
+            self.ui.doc_settings:saveSetting("fulltext_search_last_search_text", query)
+            search.last_search_text = query
+            search.start_page = self.ui.paging and self.ui.view.state.page or self.ui.document:getXPointer()
+            search.case_insensitive = true
+            search.current_search_type = search.default_search_type
+            search.findall_results_item_index = nil
+            require("ui/trapper"):wrap(function() search:findAllText(query) end)
+        end,
+    })
+end
+
+function VoyagePanel:showSearchResults(index)
+    UIManager:show(SearchResults.Results:new{ plugin = self, index = index })
+end
+
+-- Go to search result `i` (marked on the page), with the previous / next bar.
+function VoyagePanel:gotoSearchResult(i)
+    local ui = self.ui
+    local item = ui.search.findall_results and ui.search.findall_results[i]
+    if not item then return end
+    ui.search.findall_results_item_index = i
+    if ui.rolling then
+        ui.link:addCurrentLocationToStack()
+        ui.rolling:onGotoXPointer(item.start, item.start)
+        ui.document:getTextFromXPointers(item.start, item["end"], true)
+    else
+        ui.highlight:clear()
+        local page = item.start
+        local boxes = {}
+        for n, box in ipairs(item.boxes or {}) do
+            boxes[n] = ui.document:nativeToPageRectTransform(page, box)
+        end
+        ui.link:onGotoLink({ page = page - 1 })
+        ui.view.highlight.temp[page] = boxes
+    end
+    UIManager:show(SearchResults.Nav:new{ plugin = self, index = i })
+end
+
+function VoyagePanel:showEndCard()
+    if self.endcard or not self.ui.document then return end
+    local ok, err = pcall(function()
+        self.endcard = EndCard:new{ plugin = self }
+        UIManager:show(self.endcard)
+    end)
+    if not ok then
+        logger.err("VoyageEndCard: failed to open:", err)
+        self.endcard = nil
+    end
+end
+
 function VoyagePanel:showStats()
     if self.stats or not self.ui.document then return end
     local ok, err = pcall(function()

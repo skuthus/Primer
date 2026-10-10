@@ -5,7 +5,7 @@ become the default for every book, like the Kindle.
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialog = require("ui/widget/buttondialog")
+local Dialog = require("dialog")
 local Device = require("device")
 local Event = require("ui/event")
 local Font = require("ui/font")
@@ -13,8 +13,8 @@ local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InputDialog = require("ui/widget/inputdialog")
 local Notification = require("ui/widget/notification")
+local Prompt = require("prompt")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -337,47 +337,41 @@ function AaPanel:chevronRow(bb, x, y, ry, rh, label, value, fn)
 end
 
 function AaPanel:saveTheme()
-    local dialog
-    dialog = InputDialog:new{
-        title = _("Save current settings as a theme"),
-        input_hint = _("Theme name"),
-        buttons = { {
-            { text = _("Cancel"), id = "close", callback = function() UIManager:close(dialog) end },
-            { text = _("Save"), is_enter_default = true, callback = function()
-                local name = dialog:getInputText()
-                UIManager:close(dialog)
-                if name and name:match("%S") then
-                    local cur = self:shown()
-                    cur.name = name
-                    local themes = G_reader_settings:readSetting("voyage_themes") or {}
-                    table.insert(themes, cur)
-                    G_reader_settings:saveSetting("voyage_themes", themes)
-                    self:refresh()
-                end
-            end },
-        } },
-    }
-    UIManager:show(dialog)
-    dialog:onShowKeyboard()
+    UIManager:show(Prompt:new{
+        title = _("Save Current Settings"),
+        hint = _("Theme name"),
+        ok_text = _("Save"),
+        on_ok = function(name)
+            if not name:match("%S") then return false end
+            local cur = self:shown()
+            cur.name = name
+            local themes = G_reader_settings:readSetting("voyage_themes") or {}
+            table.insert(themes, cur)
+            G_reader_settings:saveSetting("voyage_themes", themes)
+            self:refresh()
+        end,
+    })
 end
 
 function AaPanel:manageThemes()
+    self:openSubview("themes")
+end
+
+function AaPanel:deleteTheme(i)
     local themes = G_reader_settings:readSetting("voyage_themes") or {}
-    local dialog
-    local buttons = {}
-    for i, t in ipairs(themes) do
-        table.insert(buttons, { { text = string.format(_("Delete “%s”"), t.name), callback = function()
-            UIManager:close(dialog)
-            table.remove(themes, i)
-            G_reader_settings:saveSetting("voyage_themes", themes)
-            self:refresh()
-        end } })
-    end
-    if #buttons == 0 then
-        table.insert(buttons, { { text = _("No saved themes yet. Use Save Current Settings."), enabled = false } })
-    end
-    dialog = ButtonDialog:new{ title = _("Manage Themes"), buttons = buttons }
-    UIManager:show(dialog)
+    if not themes[i] then return end
+    UIManager:show(Dialog:new{
+        title = string.format(_("Delete “%s”?"), themes[i].name),
+        text = _("Your current settings won't change."),
+        buttons = {
+            { text = _("Cancel") },
+            { text = _("Delete"), bold = true, callback = function()
+                table.remove(themes, i)
+                G_reader_settings:saveSetting("voyage_themes", themes)
+                self:refresh()
+            end },
+        },
+    })
 end
 
 -- Font -----------------------------------------------------------------------------
@@ -596,7 +590,7 @@ function AaPanel:paintMore(bb, x, y)
     end)
 end
 
--- Subviews (font list, reading progress choices) -----------------------------------
+-- Subviews (font list, reading progress choices, saved themes) ---------------------
 
 function AaPanel:openSubview(kind)
     self.subview = kind
@@ -609,7 +603,8 @@ function AaPanel:paintSubview(bb, x, y)
     local u = self.u
     local row_h = round(104 * u)
     local head_y = self.top_y + self.thick
-    local title = self.subview == "fonts" and _("Font Family") or _("Reading Progress")
+    local title = self.subview == "fonts" and _("Font Family") or self.subview == "themes" and _("Manage Themes")
+        or _("Reading Progress")
     local back = self:text("‹  " .. title, self.face_bold)
     back:paintTo(bb, x + round(53 * u), y + head_y + round((self.tab_h - back:getSize().h) / 2))
     self:hit(Geom:new{ x = 0, y = self.top_y, w = round(self.W * 0.7), h = self.tab_h }, function()
@@ -622,6 +617,15 @@ function AaPanel:paintSubview(bb, x, y)
     if self.subview == "fonts" then
         items = self.sub_items
         selected = self.ui.font.font_face
+    elseif self.subview == "themes" then
+        items = {}
+        for i, t in ipairs(G_reader_settings:readSetting("voyage_themes") or {}) do
+            items[i] = { id = i, label = t.name }
+        end
+        if #items == 0 then
+            local none = self:text(_("No saved themes yet. Use Save Current Settings."), self.face_italic, round(self.W * 0.85))
+            none:paintTo(bb, x + round(62 * u), y + self.content_y + round(60 * u))
+        end
     else
         items = PROGRESS
         selected = G_reader_settings:readSetting("voyage_reading_progress") or "page"
@@ -643,14 +647,19 @@ function AaPanel:paintSubview(bb, x, y)
         local f = self.subview == "fonts" and self:fontFace(item.name, 20) or self.face_text
         local t = self:text(item.label, f, round(self.W * 0.7))
         t:paintTo(bb, x + round(62 * u), y + ry + round((row_h - t:getSize().h) / 2))
-        if is_sel then
+        if self.subview == "themes" then
+            local del = self:text(_("Delete"), self.face_text)
+            del:paintTo(bb, x + self.W - round(62 * u) - del:getSize().w, y + ry + round((row_h - del:getSize().h) / 2))
+        elseif is_sel then
             local check = self.plugin:icon("check", round(44 * u))
             check:paintTo(bb, x + self.W - round(110 * u), y + ry + round((row_h - 44 * u) / 2))
             check:free()
         end
         bb:paintRect(x + round(62 * u), y + ry + row_h - self.line, round(946 * u), self.line, Blitbuffer.COLOR_LIGHT_GRAY)
         self:hit(Geom:new{ x = 0, y = ry, w = self.W, h = row_h }, function()
-            if self.subview == "fonts" then
+            if self.subview == "themes" then
+                return self:deleteTheme(item.id)
+            elseif self.subview == "fonts" then
                 self:apply{ font = item.name }
             else
                 G_reader_settings:saveSetting("voyage_reading_progress", item.id)

@@ -14,7 +14,7 @@ local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local InputDialog = require("ui/widget/inputdialog")
+local Prompt = require("prompt")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local datetime = require("datetime")
@@ -447,24 +447,16 @@ function Settings:onPrevPage()
 end
 
 function Settings:rename()
-    local dialog
-    dialog = InputDialog:new{
+    UIManager:show(Prompt:new{
         title = _("Rename your Kindle"),
-        input = self.plugin:deviceName(),
-        buttons = { {
-            { text = _("Cancel"), id = "close", callback = function() UIManager:close(dialog) end },
-            { text = _("Save"), is_enter_default = true, callback = function()
-                local name = dialog:getInputText()
-                UIManager:close(dialog)
-                if name and name:match("%S") then
-                    G_reader_settings:saveSetting("voyage_device_name", name)
-                    self:refresh()
-                end
-            end },
-        } },
-    }
-    UIManager:show(dialog)
-    dialog:onShowKeyboard()
+        text = self.plugin:deviceName(),
+        ok_text = _("Save"),
+        on_ok = function(name)
+            if not name:match("%S") then return false end
+            G_reader_settings:saveSetting("voyage_device_name", name)
+            self:refresh()
+        end,
+    })
 end
 
 -- Exit Primer to the Kindle's own interface, after a Kindle-style confirmation.

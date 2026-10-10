@@ -6,8 +6,8 @@ page. Proportions follow a photo of a Kindle's page flip (1282px-wide screen).
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
-local ButtonDialog = require("ui/widget/buttondialog")
 local Device = require("device")
+local Dropdown = require("dropdown")
 local Event = require("ui/event")
 local Fonts = require("fonts")
 local Geom = require("ui/geometry")
@@ -313,6 +313,11 @@ function PageFlip:tool(id)
     local ui = self.ui
     if id == "pageflip" then
         return self:onClose()
+    elseif id == "kebab" then
+        local hit
+        for __, t in ipairs(self.tools) do if t.id == "kebab" then hit = t.hit end end
+        UIManager:show(Dropdown:new{ anchor = hit, items = self.plugin:readingMenuItems(function() self:onClose() end) })
+        return
     elseif id == "bookmark" then
         ui.bookmark:onToggleBookmark()
         return self:refresh(Geom:new{ x = 0, y = 0, w = self.W, h = round(250 * self.P) })
@@ -324,18 +329,6 @@ function PageFlip:tool(id)
         self.plugin:showGoTo()
     elseif id == "search" then
         ui.search:onShowFulltextSearchInput()
-    elseif id == "kebab" then
-        local dialog
-        local function item(text, fn)
-            return { { text = text, callback = function() UIManager:close(dialog) fn() end } }
-        end
-        dialog = ButtonDialog:new{ buttons = {
-            item(_("Notes"), function() self.plugin:showNotebook() end),
-            item(_("Book description"), function() ui.bookinfo:onShowBookInfo() end),
-            item(_("Reading statistics"), function() if ui.statistics then ui.statistics:onShowBookStats() end end),
-            item(_("Rotate"), function() ui:handleEvent(Event:new("SwapRotation")) end),
-        } }
-        UIManager:show(dialog)
     end
 end
 

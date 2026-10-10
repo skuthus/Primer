@@ -11,6 +11,7 @@ local Fonts = require("fonts")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local Prompt = require("prompt")
 local TextWidget = require("ui/widget/textwidget")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -188,12 +189,37 @@ end
 function GoTo:onNextPage() return self:goToPage(self.page + 1) end
 function GoTo:onPrevPage() return self:goToPage(self.page - 1) end
 
+-- Page number entry. Books with publisher page labels keep KOReader's dialog, which knows them.
+function GoTo:askPage()
+    if self.ui.pagemap and self.ui.pagemap:wantsPageLabels() then
+        self:onClose()
+        return self.ui.gotopage:onShowGotoDialog()
+    end
+    local pages = self.ui.document:getPageCount()
+    UIManager:show(Prompt:new{
+        title = _("Go to Page"),
+        description = string.format(_("You are on page %d of %d."), self.ui:getCurrentPage(), pages),
+        hint = string.format(_("Page (1–%d)"), pages),
+        input_type = "number",
+        ok_text = _("Go"),
+        on_ok = function(text, prompt)
+            local p = tonumber(text)
+            if not p or p < 1 or p > pages or p % 1 ~= 0 then
+                prompt:setMessage(string.format(_("Enter a page from 1 to %d."), pages))
+                return false
+            end
+            self:onClose()
+            self.ui.link:addCurrentLocationToStack()
+            self.ui:handleEvent(Event:new("GotoPage", p))
+        end,
+    })
+end
+
 function GoTo:onTap(__, ges)
     local pos = ges.pos
     if inside(pos, self.back_hit) then return self:onClose() end
     if inside(pos, self.page_hit) then
-        self:onClose()
-        self.ui.gotopage:onShowGotoDialog()
+        self:askPage()
         return true
     end
     if inside(pos, self.notes_tab) then

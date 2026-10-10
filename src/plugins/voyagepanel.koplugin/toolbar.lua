@@ -9,6 +9,7 @@ Proportions follow a screenshot of the Voyage's own toolbar.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Device = require("device")
+local Dropdown = require("dropdown")
 local Event = require("ui/event")
 local Fonts = require("fonts")
 local Geom = require("ui/geometry")
@@ -103,10 +104,6 @@ function Toolbar:layout()
     end
     self.search_hit = Geom:new{ x = self.search_x0, y = self.row1_y, w = self.search_x1 - self.search_x0, h = self.row1_h }
     self.kebab_hit = Geom:new{ x = self.search_x1, y = self.row1_y, w = W - self.search_x1, h = self.row1_h }
-    self.menu_items = {
-        { id = "notebook", text = _("Notebook") },
-        { id = "stats", text = _("Reading Statistics") },
-    }
 
     -- Row 2: Aa on the left, Go To and the bookmark ribbon on the right.
     self.aa_hit = Geom:new{ x = 0, y = self.row2_y, w = round(W * 0.3), h = self.row2_h }
@@ -242,44 +239,6 @@ function Toolbar:paintToolbar(bb, x, y)
         glyph:paintTo(bb, sx + round((self.seg_w - s) / 2), y + self.seg_y + round((self.seg_h - s) / 2))
         glyph:free()
     end
-
-    -- ⋮ dropdown: hangs from the button's row, right-aligned, over Go To and the page.
-    local m = self.menu
-    if m then
-        local BLACK = Blitbuffer.COLOR_BLACK
-        local thick = math.max(2, round(3 * u))
-        bb:paintRect(x + m.x, y + m.y, m.w, m.h, WHITE)
-        bb:paintBorder(x + m.x, y + m.y, m.w, m.h, thick, BLACK)
-        for i, item in ipairs(self.menu_items) do
-            local ry = y + m.y + (i - 1) * self.menu_row_h
-            if i > 1 then bb:paintRect(x + m.x + pad, ry, m.w - 2 * pad, self.line, Blitbuffer.COLOR_LIGHT_GRAY) end
-            local t = self:text(item.text, self.face_search)
-            t:paintTo(bb, x + m.x + pad, ry + round((self.menu_row_h - t:getSize().h) / 2))
-            if self.menu_pressed == i then
-                local top, bottom = i == 1 and thick or 0, i == #self.menu_items and thick or 0
-                bb:invertRect(x + m.x + thick, ry + top, m.w - 2 * thick, self.menu_row_h - top - bottom)
-            end
-        end
-    end
-end
-
-function Toolbar:toggleMenu()
-    if self.menu then
-        local old = self.menu
-        self.menu = nil
-        UIManager:setDirty(nil, function() return "ui", old end)
-        self:refresh()
-        return
-    end
-    local u = self.u
-    local row_h = round(96 * u)
-    local w = round(420 * u)
-    for __, item in ipairs(self.menu_items) do
-        w = math.max(w, self:text(item.text, self.face_search):getSize().w + 2 * self.pad)
-    end
-    self.menu_row_h = row_h
-    self.menu = Geom:new{ x = self.W - w - round(16 * u), y = self.row2_y - round(4 * u), w = w, h = row_h * #self.menu_items }
-    UIManager:setDirty(self, function() return "ui", self.menu end)
 end
 
 function Toolbar:refresh()
@@ -306,13 +265,7 @@ function Toolbar:act(id)
         self:onClose()
         ui.search:onShowFulltextSearchInput()
     elseif id == "kebab" then
-        self:toggleMenu()
-    elseif id == "notebook" then
-        self:onClose()
-        self.plugin:showNotebook()
-    elseif id == "stats" then
-        self:onClose()
-        self.plugin:showStats()
+        UIManager:show(Dropdown:new{ anchor = self.kebab_hit, items = self.plugin:readingMenuItems(function() self:onClose() end) })
     elseif id == "aa" then
         self:onClose()
         self.plugin:showTextSettings()
@@ -333,26 +286,6 @@ end
 
 function Toolbar:onTap(__, ges)
     local pos = ges.pos
-    if self.menu then
-        local m = self.menu
-        if inside(pos, m) then
-            local i = math.floor((pos.y - m.y) / self.menu_row_h) + 1
-            local item = self.menu_items[i]
-            if item then
-                self.menu_pressed = i
-                UIManager:setDirty(self, function() return "fast", m end)
-                UIManager:forceRePaint()
-                UIManager:scheduleIn(0.12, function()
-                    self.menu_pressed = nil
-                    self:act(item.id)
-                end)
-            end
-            return true
-        end
-        -- Any other tap just closes the dropdown, as on the Kindle (⋮ included).
-        self:toggleMenu()
-        return true
-    end
     if not (inside(pos, self.top) or inside(pos, self.bottom)) then
         return self:onClose()
     end
@@ -393,10 +326,6 @@ function Toolbar:onCloseWidget()
     self.plugin.toolbar = nil
     UIManager:setDirty(nil, function() return "ui", self.top end)
     UIManager:setDirty(nil, function() return "ui", self.bottom end)
-    if self.menu then
-        local m = self.menu
-        UIManager:setDirty(nil, function() return "ui", m end)
-    end
 end
 
 return Toolbar

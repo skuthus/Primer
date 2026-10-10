@@ -1,7 +1,7 @@
 --[[--
-Kindle-style library search: a bar across the top (magnifier, text field, Cancel) over the
-library, with the keyboard below. The book list filters as you type; Enter (or closing the
-keyboard) keeps the results, Cancel clears them.
+Kindle-style search bar: across the top (magnifier, text field, Cancel), with the keyboard
+below. In the library the book list filters as you type; Enter (or closing the keyboard)
+keeps the results, Cancel clears them. While reading, Enter searches the book.
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -28,7 +28,8 @@ local SearchBar = InputContainer:extend{
     is_always_active = true,
     plugin = nil,
     text = "",
-    on_change = nil,  -- function(text): live filtering
+    hint = nil,
+    on_change = nil,  -- function(text): live filtering (none for in-book search)
     on_done = nil,    -- function(text): kept
     on_cancel = nil,
 }
@@ -51,7 +52,7 @@ function SearchBar:init()
     local icon_room = round(64 * u)
     self.input = InputText:new{
         text = self.text,
-        hint = _("Search your library"),
+        hint = self.hint or _("Search your library"),
         face = Fonts.face("ui", 18),
         width = self.field.w - icon_room - round(20 * u),
         height = nil,
@@ -59,7 +60,7 @@ function SearchBar:init()
         focused = true,
         parent = self,
         edit_callback = function(edited)
-            if edited then self:changed() end
+            if edited and self.on_change then self:changed() end
         end,
         enter_callback = function() self:done() end,
     }
