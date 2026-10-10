@@ -1,9 +1,9 @@
 --[[--
 Kindle-style reading toolbar, shown when tapping the top of the page while reading.
-Top: status line (title, airplane, battery, time), home / back / settings, Search, ⋮ (a
-dropdown: Notebook, Reading Statistics),
-then Aa, Go To and the bookmark ribbon. Bottom: chapter, page and time left, and
-Book map / Page browser. The page stays visible in between; tapping it closes.
+Top: status line (title, airplane, battery, time), then one row of icons with labels: back,
+settings, Aa (font and layout), Go To (U-turn arrow), Search and ⋮ (a dropdown: Notebook, Reading Statistics).
+Bottom: chapter, page and time left, Book map / Page browser, and the bookmark ribbon
+(bottom right). The page stays visible in between; tapping it closes.
 Proportions follow a screenshot of the Voyage's own toolbar.
 --]]
 
@@ -29,6 +29,8 @@ local function round(v) return math.floor(v + 0.5) end
 local function inside(pos, r)
     return r and pos.x >= r.x and pos.x < r.x + r.w and pos.y >= r.y and pos.y < r.y + r.h
 end
+
+local TOOL_LABELS = { back = _("back"), settings = _("settings"), aa = _("font"), ["goto"] = _("go to") }
 
 local Toolbar = InputContainer:extend{
     plugin = nil,
@@ -58,8 +60,7 @@ function Toolbar:init()
     self.face_status = Fonts.face("ui", 16)
     self.face_label = Fonts.face("ui", 13)
     self.face_search = Fonts.face("ui", 18)
-    self.face_aa = Fonts.face("ui", 30)
-    self.face_goto = Fonts.face("ui", 18)
+    self.face_aa = Fonts.face("ui", 24)
     self.face_chapter = Fonts.face("ui", 18)
     self.face_info = Fonts.face("ui", 15)
 
@@ -90,27 +91,20 @@ function Toolbar:layout()
     -- Top block
     self.status_h = round(57 * u)
     self.row1_y, self.row1_h = self.status_h, round(105 * u)
-    self.row2_y, self.row2_h = self.row1_y + self.row1_h, round(110 * u)
-    self.top = Geom:new{ x = 0, y = 0, w = W, h = self.row2_y + self.row2_h + self.line }
+    self.top = Geom:new{ x = 0, y = 0, w = W, h = self.row1_y + self.row1_h + self.line }
 
-    -- Row 1: three tool buttons share the left section, then Search, then ⋮.
+    -- One row: back, settings, Aa and Go To share the left section, then Search, then ⋮.
     self.search_x0, self.search_x1 = round(694 * u), round(960 * u)
     self.tool_icon = round(44 * u)
     self.tools = {}
-    for i, id in ipairs({ "home", "back", "settings" }) do
-        local col_w = self.search_x0 / 3
+    local tool_ids = { "back", "settings", "aa", "goto" }
+    for i, id in ipairs(tool_ids) do
+        local col_w = self.search_x0 / #tool_ids
         self.tools[i] = { id = id, cx = round(col_w * (i - 0.5)),
             hit = Geom:new{ x = round(col_w * (i - 1)), y = self.row1_y, w = round(col_w), h = self.row1_h } }
     end
     self.search_hit = Geom:new{ x = self.search_x0, y = self.row1_y, w = self.search_x1 - self.search_x0, h = self.row1_h }
     self.kebab_hit = Geom:new{ x = self.search_x1, y = self.row1_y, w = W - self.search_x1, h = self.row1_h }
-
-    -- Row 2: Aa on the left, Go To and the bookmark ribbon on the right.
-    self.aa_hit = Geom:new{ x = 0, y = self.row2_y, w = round(W * 0.3), h = self.row2_h }
-    self.ribbon = round(48 * u)
-    self.ribbon_x = round(946 * u)
-    self.bookmark_hit = Geom:new{ x = round(905 * u), y = self.row2_y, w = W - round(905 * u), h = self.row2_h }
-    self.goto_hit = Geom:new{ x = round(760 * u), y = self.row2_y, w = round(145 * u), h = self.row2_h }
 
     -- Bottom block
     self.bottom_h = round(276 * u)
@@ -120,6 +114,11 @@ function Toolbar:layout()
     self.seg_x = round(W / 2) - self.seg_w
     self.bookmap_hit = Geom:new{ x = self.seg_x - round(20 * u), y = self.seg_y - round(15 * u), w = self.seg_w + round(20 * u), h = self.seg_h + round(30 * u) }
     self.browser_hit = Geom:new{ x = self.seg_x + self.seg_w, y = self.seg_y - round(15 * u), w = self.seg_w + round(20 * u), h = self.seg_h + round(30 * u) }
+    -- Bookmark ribbon at the bottom right, level with Book map / Page browser.
+    self.ribbon = round(48 * u)
+    self.ribbon_x = W - self.pad - self.ribbon
+    self.ribbon_cy = self.seg_y + round(self.seg_h / 2)
+    self.bookmark_hit = Geom:new{ x = W - round(200 * u), y = self.seg_y - round(40 * u), w = round(200 * u), h = self.seg_h + round(80 * u) }
 end
 
 -- Page, chapter and progress, as the footer sees them.
@@ -188,12 +187,18 @@ function Toolbar:paintToolbar(bb, x, y)
     title_w:paintTo(bb, x + round((W - title_w:getSize().w) / 2), cy - round(title_w:getSize().h / 2))
     self:paintLine(bb, x, y + self.row1_y - self.line, W)
 
-    -- Row 1
+    -- Tools: an icon over a small label each. "Aa" is the font and layout icon; Go To is a U-turn arrow.
+    local icon_y, icon_cy = y + self.row1_y + round(18 * u), y + self.row1_y + round(18 * u) + round(self.tool_icon / 2)
     for __, t in ipairs(self.tools) do
-        local icon = self:icon(t.id == "settings" and "gear" or t.id, self.tool_icon)
-        icon:paintTo(bb, x + t.cx - round(self.tool_icon / 2), y + self.row1_y + round(18 * u))
-        icon:free()
-        local label = self:text(t.id == "home" and _("home") or t.id == "back" and _("back") or _("settings"), self.face_label)
+        if t.id == "aa" then
+            local aa = self:text("Aa", self.face_aa)
+            aa:paintTo(bb, x + t.cx - round(aa:getSize().w / 2), icon_cy - round(aa:getSize().h / 2))
+        else
+            local icon = self:icon(t.id == "settings" and "gear" or t.id, self.tool_icon)
+            icon:paintTo(bb, x + t.cx - round(self.tool_icon / 2), icon_y)
+            icon:free()
+        end
+        local label = self:text(TOOL_LABELS[t.id], self.face_label)
         label:paintTo(bb, x + t.cx - round(label:getSize().w / 2), y + self.row1_y + round(66 * u))
     end
     bb:paintRect(x + self.search_x0, y + self.row1_y, self.line, self.row1_h, Blitbuffer.COLOR_GRAY)
@@ -208,18 +213,6 @@ function Toolbar:paintToolbar(bb, x, y)
     local kebab = self:icon("kebab", round(40 * u))
     kebab:paintTo(bb, x + round((self.search_x1 + W) / 2) - round(20 * u), row1_cy - round(20 * u))
     kebab:free()
-    self:paintLine(bb, x, y + self.row2_y - self.line, W)
-
-    -- Row 2
-    local row2_cy = y + self.row2_y + round(self.row2_h / 2)
-    local aa = self:text("Aa", self.face_aa)
-    aa:paintTo(bb, x + round(52 * u), row2_cy - round(aa:getSize().h / 2))
-    local goto_w = self:text(_("Go To"), self.face_goto)
-    goto_w:paintTo(bb, x + round(802 * u), row2_cy - round(goto_w:getSize().h / 2))
-    local bookmarked = self.ui.bookmark and self.ui.bookmark:isPageBookmarked()
-    local ribbon = self:icon(bookmarked and "bookmark-filled" or "bookmark", self.ribbon)
-    ribbon:paintTo(bb, x + self.ribbon_x, row2_cy - round(self.ribbon / 2))
-    ribbon:free()
     self:paintLine(bb, x, y + self.top.h - self.line, W)
 
     -- Bottom block
@@ -239,6 +232,10 @@ function Toolbar:paintToolbar(bb, x, y)
         glyph:paintTo(bb, sx + round((self.seg_w - s) / 2), y + self.seg_y + round((self.seg_h - s) / 2))
         glyph:free()
     end
+    local bookmarked = self.ui.bookmark and self.ui.bookmark:isPageBookmarked()
+    local ribbon = self:icon(bookmarked and "bookmark-filled" or "bookmark", self.ribbon)
+    ribbon:paintTo(bb, x + self.ribbon_x, y + self.ribbon_cy - round(self.ribbon / 2))
+    ribbon:free()
 end
 
 function Toolbar:refresh()
@@ -248,10 +245,8 @@ end
 
 function Toolbar:act(id)
     local ui = self.ui
-    if id == "home" then
-        self:onClose()
-        ui:onHome()
-    elseif id == "back" then
+    if id == "back" then
+        -- Back to where you were before a jump (link, Go To, search, page flip…), else the library.
         self:onClose()
         if ui.link and ui.link.location_stack and #ui.link.location_stack > 0 then
             ui.link:onGoBackLink()
@@ -293,8 +288,7 @@ function Toolbar:onTap(__, ges)
         if inside(pos, t.hit) then self:act(t.id); return true end
     end
     local targets = {
-        { self.search_hit, "search" }, { self.kebab_hit, "kebab" }, { self.aa_hit, "aa" },
-        { self.goto_hit, "goto" }, { self.bookmark_hit, "bookmark" },
+        { self.search_hit, "search" }, { self.kebab_hit, "kebab" }, { self.bookmark_hit, "bookmark" },
         { self.bookmap_hit, "bookmap" }, { self.browser_hit, "browser" },
     }
     for __, target in ipairs(targets) do

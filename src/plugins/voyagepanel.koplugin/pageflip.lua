@@ -300,6 +300,7 @@ end
 function PageFlip:goTo(p)
     self:onClose()
     if p ~= self.orig then
+        self.ui.link:addCurrentLocationToStack() -- so the toolbar's Back can return here
         self.ui:handleEvent(Event:new("GotoPage", p))
     end
 end

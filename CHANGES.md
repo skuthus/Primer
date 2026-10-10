@@ -31,6 +31,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - Font: Font Family list (Kindle and sideloaded fonts, each shown in its own face), Bold 1–5, Size 1–14 (KOReader 22 = Kindle 4).
   - Layout: Orientation, Margins (3), Alignment (justified / left), Spacing (3).
   - More: Reading Progress (Page in book / Time left in chapter / Time left in book / None, drives the footer), Show Clock While Reading (top center), Highlight Menu. Amazon-only items left out.
+- [x] **One-row toolbar, Back only** (2026-10-10, confirmed by user): the toolbar's top is a single row of icons with labels: back · settings · Aa (font) · Go To (U-turn arrow) · Search · ⋮ (Home removed; the second row is gone, so the toolbar covers less of the page). The bookmark ribbon moved to the bottom right, level with Book map / Page browser. Back returns to where you were before a jump (link, Go To, search, book map, page grid, notebook, page flip), else to the library. Jumping from the page flip now counts as a jump.
 - [x] **Toolbar ⋮ and Aa refinements** (2026-10-10). Confirmed by user.
   - ⋮ opens a Kindle-style dropdown under the button (Notebook, Reading Statistics) instead of a popup; Book description and Rotate removed. Any other tap closes it.
   - Reading Statistics: a card with the book, a progress bar ("Page X of Y", "N% read") and a two-column grid: time left in book, time spent reading, days reading, average per day, pages read, highlights · notes, started, estimated finish. Times need KOReader's statistics plugin (dash otherwise).
