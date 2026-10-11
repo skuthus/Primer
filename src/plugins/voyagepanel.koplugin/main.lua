@@ -272,6 +272,39 @@ do
     end
 end
 
+-- reMarkable: AppLoad lets the system and KOReader both see each touch, so the system's own
+-- swipe down from the top-right corner (brightness) also reached KOReader, where its opening
+-- press could open an image on the page. Presses, drags and swipes that start in that corner
+-- are left to the system; quick taps there still work (e.g. the bookmark corner).
+do
+    if not UIManager._voyage_remarkable_corner_hooked and Device:isRemarkable() then
+        UIManager._voyage_remarkable_corner_hooked = true
+        local STARTS = { hold = true, pan = true, swipe = true, multiswipe = true }
+        local ENDS = { hold_release = true, pan_release = true, swipe = true, multiswipe = true }
+        local FOLLOWS = { hold_pan = true, hold_release = true, pan = true, pan_release = true }
+        local in_corner_gesture = false
+        local function inCorner(p)
+            return p and p.x >= Screen:getWidth() * 0.75 and p.y <= Screen:getHeight() * 0.12
+        end
+        local orig = UIManager.handleInputEvent
+        function UIManager:handleInputEvent(input_event)
+            local ges = type(input_event) == "table" and input_event.handler == "onGesture"
+                and input_event.args and input_event.args[1]
+            if ges and ges.ges then
+                if in_corner_gesture and (FOLLOWS[ges.ges] or ENDS[ges.ges]) then
+                    if ENDS[ges.ges] then in_corner_gesture = false end
+                    return
+                end
+                if STARTS[ges.ges] and inCorner(ges.start_pos or ges.pos) then
+                    in_corner_gesture = not ENDS[ges.ges]
+                    return
+                end
+            end
+            return orig(self, input_event)
+        end
+    end
+end
+
 -- Pinch and spread step through the Aa panel's font sizes instead of by pinch distance.
 do
     local ReaderFont = require("apps/reader/modules/readerfont")
