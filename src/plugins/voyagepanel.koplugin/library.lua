@@ -313,22 +313,6 @@ function Library:paintTo(bb, x, y)
     end
 end
 
-function Library:paintBattery(bb, right, cy)
-    local powerd = Device:getPowerDevice()
-    local h = round(self.bar_icon * 0.36)
-    local w = round(h * 2.1)
-    local border = math.max(2, round(self.width * 0.002))
-    local x = right - w - border
-    local top = cy - round(h / 2)
-    bb:paintRect(x + w, top + round(h * 0.3), border, round(h * 0.4), Blitbuffer.COLOR_BLACK)
-    bb:paintBorder(x, top, w, h, border, Blitbuffer.COLOR_BLACK)
-    local inner = w - 4 * border
-    local fill = round(inner * math.min(math.max(powerd:getCapacity(), 0), 100) / 100)
-    if fill > 0 then
-        bb:paintRect(x + 2 * border, top + 2 * border, fill, h - 4 * border, Blitbuffer.COLOR_BLACK)
-    end
-    return x
-end
 
 function Library:paintHeader(bb, x, y)
     local W, bar = self.width, self.bar
@@ -342,7 +326,7 @@ function Library:paintHeader(bb, x, y)
     local clock = TextWidget:new{ text = stamp, face = self.face_header }
     clock:paintTo(bb, x + self.pad, cy - round(clock:getSize().h / 2))
     clock:free()
-    local right = self:paintBattery(bb, x + W - self.pad, cy)
+    local right = self.plugin:paintBattery(bb, x + W - self.pad, cy, round(self.bar_icon * 0.36), self.face_footer)
     if self.plugin:isWirelessOn() then
         local s = round(self.bar_icon * 0.55)
         local wifi = self.plugin:icon("s-wifi", s, true)
@@ -493,7 +477,8 @@ function Library:paintRow(bb, x, row_y, book, pressed, striped)
     local max_dots = math.floor(self.title_max / (self.dot + self.dot_gap))
     local total = math.min(math.max(round(math.sqrt(book.size / 1024) * 0.8), 3), max_dots)
     local filled = round(total * percent)
-    local dot_y = title_y + th + round(self.dot * 0.5)
+    -- Centred between the bottom of the title and the bottom of the row.
+    local dot_y = round((title_y + th + row_y + self.row_h) / 2 - self.dot / 2)
     for d = 0, total - 1 do
         local dx = x + self.title_x + d * (self.dot + self.dot_gap)
         if d < filled then

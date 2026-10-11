@@ -169,11 +169,7 @@ function Toolbar:paintToolbar(bb, x, y)
     local clock = self:text(datetime.secondsToHour(os.time(), G_reader_settings:isTrue("twelve_hour_clock")), self.face_status)
     clock:paintTo(bb, x + pad, cy - round(clock:getSize().h / 2))
     local left = x + pad + clock:getSize().w + round(28 * u)
-    local right = self.plugin:paintBattery(bb, x + W - pad, cy, round(20 * u))
-    local powerd = Device:getPowerDevice()
-    local pct = self:text(string.format("%d%%", powerd:getCapacity()), self.face_status)
-    right = right - round(6 * u) - pct:getSize().w
-    pct:paintTo(bb, right, cy - round(pct:getSize().h / 2))
+    local right = self.plugin:paintBattery(bb, x + W - pad, cy, round(20 * u), self.face_status)
     if not self.plugin:isWirelessOn() then
         local plane = self.plugin:icon("airplane", round(36 * u))
         right = right - round(24 * u) - round(36 * u)
@@ -246,13 +242,9 @@ end
 function Toolbar:act(id)
     local ui = self.ui
     if id == "back" then
-        -- Back to where you were before a jump (link, Go To, search, page flip…), else the library.
+        -- Back always means back to the library.
         self:onClose()
-        if ui.link and ui.link.location_stack and #ui.link.location_stack > 0 then
-            ui.link:onGoBackLink()
-        else
-            ui:onHome()
-        end
+        ui:onHome()
     elseif id == "settings" then
         self:onClose()
         self.plugin:openAllSettings()

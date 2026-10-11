@@ -204,13 +204,8 @@ function QuickPanel:paintPanel(bb, x, y)
     local clock_w = TextWidget:new{ text = clock, face = self.face_text }
     clock_w:paintTo(bb, x + pad, y + self.clock_y)
     clock_w:free()
-    local capacity = self.powerd:getCapacity()
-    local charging = self.powerd:isCharging()
-    local battery = string.format("%d%% %s", capacity,
-        self.powerd:getBatterySymbol(self.powerd:isCharged(), charging, capacity))
-    local battery_w = TextWidget:new{ text = battery, face = self.face_text }
-    battery_w:paintTo(bb, x + W - pad - battery_w:getSize().w, y + self.header_y)
-    battery_w:free()
+    local name_h = self:text(name, self.face_title):getSize().h
+    self.plugin:paintBattery(bb, x + W - pad, y + self.header_y + round(name_h / 2), round(W * 0.022), self.face_text)
 
     -- Buttons
     for __, b in ipairs(self.buttons) do

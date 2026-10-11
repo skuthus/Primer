@@ -67,6 +67,9 @@ function Settings:pages()
         { kind = "info", title = _("Battery"),
             subtitle = string.format("%d%%%s", Device:getPowerDevice():getCapacity(),
                 Device:getPowerDevice():isCharging() and (" · " .. _("charging")) or "") },
+        { kind = "toggle", title = _("Battery percentage"), subtitle = _("Show the percentage next to the battery icon"),
+            get = function() return plugin:showBatteryPercent() end,
+            set = function(on) G_reader_settings:saveSetting("voyage_battery_percent", on) end },
         { kind = "choice", title = _("Sleep after"), choices = {
                 { _("5 minutes"), 300 }, { _("10 minutes"), 600 }, { _("15 minutes"), 900 },
                 { _("30 minutes"), 1800 }, { _("1 hour"), 3600 } },
@@ -353,10 +356,7 @@ function Settings:paintSettings(bb, x, y)
     local chevron = self.plugin:icon("chevron-down", round(126 * u))
     chevron:paintTo(bb, x + round((W - 126 * u) / 2), cy - round(63 * u) - round(14 * u))
     chevron:free()
-    local right = self.plugin:paintBattery(bb, x + W - round(30 * u), cy, round(24 * u))
-    local pct = self:text(string.format("%d%%", Device:getPowerDevice():getCapacity()), self.face_status)
-    right = right - round(8 * u) - pct:getSize().w
-    pct:paintTo(bb, right, cy - round(pct:getSize().h / 2))
+    local right = self.plugin:paintBattery(bb, x + W - round(30 * u), cy, round(24 * u), self.face_status)
     if self.plugin:isWirelessOn() then
         local s = round(40 * u)
         local wifi = self.plugin:icon("s-wifi", s)

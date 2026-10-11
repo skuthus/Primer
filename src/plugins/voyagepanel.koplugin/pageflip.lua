@@ -191,10 +191,7 @@ function PageFlip:paintFlip(bb, x, y)
     local chevron = self.plugin:icon("chevron-down", round(130 * P))
     chevron:paintTo(bb, x + round((W - 130 * P) / 2), y + round(48 * P) - round(65 * P))
     chevron:free()
-    local right = self.plugin:paintBattery(bb, x + W - round(30 * P), y + round(57 * P), round(26 * P))
-    local pct = self:text(string.format("%d%%", Device:getPowerDevice():getCapacity()), self.face_status)
-    right = right - round(10 * P) - pct:getSize().w
-    pct:paintTo(bb, right, y + round(57 * P) - round(pct:getSize().h / 2))
+    local right = self.plugin:paintBattery(bb, x + W - round(30 * P), y + round(57 * P), round(26 * P), self.face_status)
     if not self.plugin:isWirelessOn() then
         local s = round(40 * P)
         self:icon("airplane", s, right - round(28 * P) - round(s / 2), y + round(57 * P), bb)

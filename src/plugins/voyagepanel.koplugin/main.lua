@@ -632,19 +632,49 @@ function VoyagePanel:setWireless(on)
 end
 
 -- A drawn battery whose right edge (with nub) sits at `right`; returns its left x.
-function VoyagePanel:paintBattery(bb, right, cy, h)
-    local border = math.max(2, math.floor(h / 9 + 0.5))
-    local w = math.floor(h * 2.1 + 0.5)
-    local x = right - w - border
-    local top = cy - math.floor(h / 2 + 0.5)
-    bb:paintRect(x + w, top + math.floor(h * 0.3 + 0.5), border, math.floor(h * 0.4 + 0.5), Blitbuffer.COLOR_BLACK)
-    bb:paintBorder(x, top, w, h, border, Blitbuffer.COLOR_BLACK)
-    local capacity = math.min(math.max(Device:getPowerDevice():getCapacity(), 0), 100)
-    local fill = math.floor((w - 4 * border) * capacity / 100 + 0.5)
+function VoyagePanel:showBatteryPercent()
+    return G_reader_settings:nilOrTrue("voyage_battery_percent")
+end
+
+-- The battery, drawn the same everywhere: a rounded outline with a rounded fill inset by a small
+-- gap, a rounded nub, and a lightning bolt while charging. Its right edge sits at `right`,
+-- centred on `cy`. With `face`, the percentage goes to its left when Settings > Device options
+-- > Battery percentage is on. Returns the leftmost x drawn.
+function VoyagePanel:paintBattery(bb, right, cy, h, face)
+    local BLACK = Blitbuffer.COLOR_BLACK
+    local powerd = Device:getPowerDevice()
+    local capacity = math.min(math.max(powerd:getCapacity(), 0), 100)
+    local function r(v) return math.floor(v + 0.5) end
+    local border = math.max(2, r(h / 10))
+    local gap = math.max(1, r(h / 11))
+    local w = r(h * 2.1)
+    local nub_w, nub_h = math.max(2, r(h * 0.14)), r(h * 0.42)
+    local x = right - nub_w - w
+    local top = cy - r(h / 2)
+    local radius = r(h * 0.32)
+    bb:paintRoundedRect(x + w - 1, cy - r(nub_h / 2), nub_w + 1, nub_h, BLACK, r(nub_w * 0.6))
+    bb:paintBorder(x, top, w, h, border, BLACK, radius)
+    local inset = border + gap
+    local inner_w, inner_h = w - 2 * inset, h - 2 * inset
+    local fill = r(inner_w * capacity / 100)
     if fill > 0 then
-        bb:paintRect(x + 2 * border, top + 2 * border, fill, h - 4 * border, Blitbuffer.COLOR_BLACK)
+        bb:paintRoundedRect(x + inset, top + inset, math.max(fill, math.min(inner_h, inner_w)), inner_h, BLACK,
+            math.max(1, radius - inset))
     end
-    return x
+    if powerd:isCharging() then
+        local s = r(h * 1.15)
+        local bolt = self:icon("bolt", s, true)
+        bolt:paintTo(bb, x + r((w - s) / 2), cy - r(s / 2))
+        bolt:free()
+    end
+    local left = x
+    if face and self:showBatteryPercent() then
+        local pct = TextWidget:new{ text = string.format("%d%%", capacity), face = face }
+        left = x - r(h * 0.35) - pct:getSize().w
+        pct:paintTo(bb, left, cy - r(pct:getSize().h / 2))
+        pct:free()
+    end
+    return left
 end
 
 -- `alpha`: keep the icon's transparency, for icons drawn on a shaded background.
