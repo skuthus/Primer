@@ -7,9 +7,10 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 9 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
+local SETUP_VERSION = 10 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
                         -- 5: reMarkable bottom margin; 6: reMarkable footer keeps its own space; 7: bottom margin 18;
-                        -- 8: Kindle home folder is documents; 9: smaller book text on the Paperwhite 12
+                        -- 8: Kindle home folder is documents; 9: smaller book text on the Paperwhite 12;
+                        -- 10: page turn animation on where the screen can do it
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -82,6 +83,13 @@ if reading then
     for k, v in pairs(reading) do
         if not G_reader_settings:has(k) then G_reader_settings:saveSetting(k, v) end
     end
+end
+
+-- MediaTek Kindles (Paperwhite 5 and 6, Scribe, Colorsoft): the display controller can sweep the
+-- new page in during the refresh, as the stock reader's page turns do (12 steps, as stock).
+-- KOReader supports it but leaves it off; Primer turns it on unless it was already chosen.
+if Device.canDoSwipeAnimation and Device:canDoSwipeAnimation() and not G_reader_settings:has("swipe_animations") then
+    G_reader_settings:saveSetting("swipe_animations", true)
 end
 
 -- Kindle: KOReader's home is the whole user partition (/mnt/us), so its file browser and Primer's

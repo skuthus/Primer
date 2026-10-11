@@ -106,6 +106,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **Stock Kindle sleep screens.** (Installed 2026-10-09; confirmed by user.) The Voyage is not Special Offers, so KOReader draws them: `screensaver_type = "random_image"` from `/mnt/us/screensavers`, no "Sleeping" message. The plugin copies the 20 stock illustrations (`/usr/share/blanket/screensaver/bg_ss00–19.png`, skipping the Amazon Kids set) there on first start (`tools/stock-screensavers.sh`). Add your own images to that folder to mix them in.
 
 ### Screen refresh
+- [x] **Stock page turn animation** (2026-10-11, confirmed by user on the Paperwhite 12). Newer (MediaTek) Kindles' display controller can sweep the new page across the screen during the refresh, which is what the stock reader's page turns do. KOReader drives it (`MTK_EPDC_FLAG_ENABLE_SWIPE`, 12 steps like stock) but leaves `swipe_animations` off; setup v10 turns it on where `Device:canDoSwipeAnimation()`, and Settings > Screen and brightness > Page turn animation toggles it. Watch the chapter-start flash, which also gets swept in.
 - [~] **Kindle-style refresh.** (Installed 2026-10-09.) Flash-free REAGL page turns with no forced flash every N pages (`full_refresh_count = 0`, day and night), no black flashes on menus (`avoid_flashing_ui`), one full refresh at each chapter start (plugin `onPageUpdate`). Watch for ghosting in long chapters; fallback is a refresh every 20–30 pages.
 
 ### Remaining KOReader screens (2026-10-10, confirmed by user)

@@ -130,6 +130,10 @@ function Settings:pages()
                 UIManager:broadcastEvent(Event:new("ToggleNightMode"))
                 self:refresh("full")
             end },
+        (Device.canDoSwipeAnimation and Device:canDoSwipeAnimation()) and { kind = "toggle", title = _("Page turn animation"),
+            subtitle = _("The new page sweeps across the screen, like the Kindle's"),
+            get = function() return G_reader_settings:isTrue("swipe_animations") end,
+            set = function(on) G_reader_settings:saveSetting("swipe_animations", on) end } or false,
         { kind = "choice", title = _("Full page refresh"), choices = {
                 { _("Never"), 0 }, { _("Every 20 pages"), 20 }, { _("Every 40 pages"), 40 } },
             get = function() return G_reader_settings:readSetting("full_refresh_count", 0) end,
