@@ -556,6 +556,10 @@ function VoyagePanel:init()
             if self.ui.file_chooser then self:showLibrary() end
         end)
     end
+    self.rotate_tick = function() self:rotateTick() end
+    if self.ui.document and self:canAutoRotate() and self:autoRotateOn() then
+        UIManager:scheduleIn(1, self.rotate_tick)
+    end
     if not G_reader_settings:isTrue("primer_welcomed") then
         UIManager:scheduleIn(1, function() self:showWelcome() end)
     end
@@ -1047,11 +1051,90 @@ end
 function VoyagePanel:onSuspend()
     UIManager:unschedule(self.auto_tick)
     UIManager:unschedule(self.clock_tick)
+    UIManager:unschedule(self.rotate_tick)
 end
 
 function VoyagePanel:onResume()
     if self.auto then UIManager:scheduleIn(1, self.auto_tick) end
     if self.ui.document then self:onClockSettingChanged() end
+    if self.ui.document and self:canAutoRotate() and self:autoRotateOn() then UIManager:scheduleIn(1, self.rotate_tick) end
+end
+
+-- Auto-rotate (reMarkable): its accelerometer (lis2dw12) isn't used by KOReader, so Primer reads it
+-- while a book is open. Turned sideways, the book goes to landscape with two pages side by side;
+-- upright again, back to one page. A position has to hold for two readings (about 0.8 s), the
+-- device lying flat changes nothing, and it waits while a Primer screen or menu is open.
+local ROTATE_POLL_S = 0.4
+local GRAVITY = 16384 -- raw reading for 1 g
+
+local function findAccelerometer()
+    for i = 0, 9 do
+        local dir = "/sys/bus/iio/devices/iio:device" .. i
+        local f = io.open(dir .. "/name", "r")
+        if f then
+            local name = f:read("*l")
+            f:close()
+            if name == "lis2dw12_accel" then return dir end
+        end
+    end
+end
+
+local function readNumber(path)
+    local f = io.open(path, "r")
+    if not f then return end
+    local v = tonumber(f:read("*l"))
+    f:close()
+    return v
+end
+
+function VoyagePanel:canAutoRotate()
+    if self.accelerometer == nil then
+        self.accelerometer = Device:isRemarkable() and findAccelerometer() or false
+    end
+    return self.accelerometer ~= false
+end
+
+function VoyagePanel:autoRotateOn()
+    return G_reader_settings:nilOrTrue("voyage_auto_rotate")
+end
+
+function VoyagePanel:setAutoRotate(on)
+    G_reader_settings:saveSetting("voyage_auto_rotate", on)
+    UIManager:unschedule(self.rotate_tick)
+    if on and self.ui.document then UIManager:scheduleIn(ROTATE_POLL_S, self.rotate_tick) end
+end
+
+-- Which way the device is held, from gravity: nil when flat or in between.
+function VoyagePanel:heldRotation()
+    local x = readNumber(self.accelerometer .. "/in_accel_x_raw")
+    local y = readNumber(self.accelerometer .. "/in_accel_y_raw")
+    if not (x and y) then return end
+    local ax, ay = math.abs(x), math.abs(y)
+    if ax > 0.6 * GRAVITY and ax > 1.5 * ay then
+        return x < 0 and Screen.DEVICE_ROTATED_CLOCKWISE or Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
+    elseif ay > 0.6 * GRAVITY and ay > 1.5 * ax then
+        return y < 0 and Screen.DEVICE_ROTATED_UPRIGHT or Screen.DEVICE_ROTATED_UPSIDE_DOWN
+    end
+end
+
+function VoyagePanel:rotateTick()
+    if not (self.ui.document and self:autoRotateOn()) then return end
+    local held = self:heldRotation()
+    if held ~= nil and held == self.rotate_candidate then
+        self.rotate_count = (self.rotate_count or 0) + 1
+    else
+        self.rotate_candidate, self.rotate_count = held, 1
+    end
+    -- Only over the page itself: Primer's screens are laid out for the orientation they opened in.
+    local on_page = UIManager:getTopmostVisibleWidget() == self.ui
+    if held ~= nil and self.rotate_count >= 2 and on_page and held ~= Screen:getRotationMode() then
+        local landscape = held == Screen.DEVICE_ROTATED_CLOCKWISE or held == Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE
+        self.ui:handleEvent(Event:new("SetRotationMode", held))
+        if self.ui.rolling then
+            self.ui:handleEvent(Event:new("SetVisiblePages", landscape and 2 or 1))
+        end
+    end
+    UIManager:scheduleIn(ROTATE_POLL_S, self.rotate_tick)
 end
 
 function VoyagePanel:paintClock(bb, x, y)
@@ -1087,6 +1170,7 @@ end
 function VoyagePanel:onCloseWidget()
     UIManager:unschedule(self.auto_tick)
     UIManager:unschedule(self.clock_tick)
+    UIManager:unschedule(self.rotate_tick)
     if self.panel then UIManager:close(self.panel) end
     if self.library then UIManager:close(self.library) end
     if self.toolbar then UIManager:close(self.toolbar) end

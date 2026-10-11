@@ -120,6 +120,10 @@ function Settings:pages()
             end },
         { kind = "toggle", title = _("Auto brightness"), enabled = plugin:hasLightSensor(),
             get = function() return plugin.auto end, set = function(on) plugin:setAuto(on) end },
+        plugin:canAutoRotate() and { kind = "toggle", title = _("Turn for landscape"),
+            subtitle = _("Turn the device sideways for two pages side by side"),
+            get = function() return plugin:autoRotateOn() end,
+            set = function(on) plugin:setAutoRotate(on) end } or false,
         { kind = "toggle", title = _("Dark mode"),
             get = function() return G_reader_settings:isTrue("night_mode") end,
             set = function()
