@@ -10,6 +10,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - Older KOReader (2026.03): light-sensor and frontlight checks guarded (fixed a quick panel crash).
   - Books' own fonts stay off: a book carrying its own "embedded fonts on" is switched to the chosen font as it opens.
   - Setup v3: no hyphenation and publisher font families ignored, filled in where not already chosen.
+  - Higher contrast book text (setup v4, confirmed by user): Contrast 1.45 (font gamma 25) and font weight +½ (Bold 2), where not already changed; the screen's texture washes out thin text.
   - On the device: old per-book layouts from before Primer cleared from 9 books (backups `metadata.*.lua.pre-primer`); 14 stale KOReader processes (AppLoad keeps them running after Exit) stopped.
 - [x] **Embedded fonts off by default.** (Set by user 2026-10-09, captured in `src/defaults/reading.lua`.) Books' bundled fonts never override the chosen font. (Aa tab: Embedded Fonts → off; global default `copt_embedded_fonts = 0`.)
 - [~] **Ignore publisher font families by default.** (Installed 2026-10-09, awaiting test; menu hiding still to do.) Style tweak `font_family_all_inherit` on globally, so every paragraph uses the chosen font. Hide the option from menus once it's a default.

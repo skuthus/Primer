@@ -7,7 +7,7 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 3 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults
+local SETUP_VERSION = 4 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -80,6 +80,14 @@ if Device:isRemarkable() then
     if tweaks.font_family_all_inherit == nil then
         tweaks.font_family_all_inherit = true
         G_reader_settings:saveSetting("style_tweaks", tweaks)
+    end
+    -- Its screen texture washes out thin text: darker letter edges (Contrast 1.45) and a light
+    -- emboldening (Bold 2 in the Aa panel), unless contrast or weight were already changed.
+    if G_reader_settings:readSetting("copt_font_gamma", 15) == 15 then
+        G_reader_settings:saveSetting("copt_font_gamma", 25)
+    end
+    if G_reader_settings:readSetting("copt_font_base_weight", 0) == 0 then
+        G_reader_settings:saveSetting("copt_font_base_weight", 0.5)
     end
 end
 
