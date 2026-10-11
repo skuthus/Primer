@@ -126,7 +126,9 @@ function AaPanel:init()
     self.face_sign = Fonts.face("ui", 26)
 
     local u = self.u
-    self.top_y = round(self.H * 0.4)
+    -- The sheet is as tall as its contents (laid out for the Voyage, where it starts 40% down):
+    -- the same on the Voyage, shorter on taller screens such as the reMarkable's.
+    self.top_y = math.max(round(self.H * 0.4), self.H - round(869 * u))
     self.tab_h = round(108 * u)
     self.content_y = self.top_y + self.tab_h
     self.sheet = Geom:new{ x = 0, y = self.top_y, w = self.W, h = self.H - self.top_y }
