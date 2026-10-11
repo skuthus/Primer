@@ -50,7 +50,8 @@ local BookCard = InputContainer:extend{
 
 function BookCard:init()
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    self.u = math.min(self.W, self.H) / 1072
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = self.dimen } } }
     if Device:hasKeys() then
@@ -67,7 +68,7 @@ function BookCard:init()
     self.pad = round(44 * u)
     self.line = math.max(1, round(2 * u))
     self.border = math.max(2, round(3 * u))
-    local w = round(self.W * 0.9)
+    local w = round(math.min(self.W, self.H) * 0.9) -- portrait width, also in landscape
     self.card = Geom:new{ x = round((self.W - w) / 2), y = 0, w = w, h = 0 }
     self.cover_w = round(w * 0.26)
     self.cover_h = round(self.cover_w * 1.5)

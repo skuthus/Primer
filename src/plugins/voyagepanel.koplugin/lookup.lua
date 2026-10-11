@@ -139,7 +139,7 @@ local Lookup = InputContainer:extend{
 
 function Lookup:init()
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    self.u = math.min(self.W, self.H) / 1072 -- sizes follow the short side (landscape too)
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.cache = {}
     self.result_idx = 1
@@ -183,10 +183,13 @@ function Lookup:layout()
 
     -- Card on the half away from the word.
     if self.results then
-        local margin = round(W * 0.06)
+        -- Landscape: cap the width so lines stay readable, and centre the card.
+        local span = math.min(W, H * 1.2)
+        local margin = round(span * 0.06)
+        local card_w = round(span) - 2 * margin
         local card_h = round(H * 0.4)
         local y = sel_cy > H / 2 and round(H * 0.035) or (H - card_h - round(H * 0.045))
-        self.card = Geom:new{ x = margin, y = y, w = W - 2 * margin, h = card_h }
+        self.card = Geom:new{ x = round((W - card_w) / 2), y = y, w = card_w, h = card_h }
     end
 
     -- Selection bar right under the word, or above it if there's no room

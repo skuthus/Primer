@@ -32,7 +32,8 @@ local BookMap = InputContainer:extend{
 function BookMap:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    local u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    local u = math.min(self.W, self.H) / 1072
     self.u = u
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.ges_events = {

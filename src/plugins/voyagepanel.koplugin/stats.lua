@@ -40,7 +40,8 @@ local Stats = InputContainer:extend{
 function Stats:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    self.u = math.min(self.W, self.H) / 1072
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = self.dimen } } }
     if Device:hasKeys() then
@@ -118,7 +119,7 @@ function Stats:layout(d)
     self.pad = round(44 * u)
     self.line = math.max(1, round(2 * u))
     self.border = math.max(2, round(3 * u))
-    local w = round(self.W * 0.9)
+    local w = round(math.min(self.W, self.H) * 0.9) -- portrait width, also in landscape
     local c = Geom:new{ x = round((self.W - w) / 2), y = 0, w = w, h = 0 }
     self.card = c
     local inner = w - 2 * self.pad
@@ -165,14 +166,25 @@ function Stats:layout(d)
         self.tiles[i] = { value = text(t[1], "ui_bold", 24, col_w), label = text(t[2], "ui", 15, col_w) }
     end
     self.col_w = col_w
-    self.tile_h = self.tiles[1].value:getSize().h + round(6 * u) + self.tiles[1].label:getSize().h + round(40 * u)
+    local rows = math.ceil(#self.tiles / 2)
+    local gap = round(40 * u) -- between rows of figures
+    local function tileH() return self.tiles[1].value:getSize().h + round(6 * u) + self.tiles[1].label:getSize().h + gap end
+    self.tile_h = tileH()
 
     -- Height: header, book, progress, grid.
     local h = self.header_h + self.pad
     h = h + self.title:getSize().h + (self.author and round(6 * u) + self.author:getSize().h or 0)
     h = h + round(34 * u) + self.bar_h + round(14 * u) + self.page_w:getSize().h
     h = h + round(36 * u) + self.line + round(36 * u)
-    h = h + self.tile_h * math.ceil(#self.tiles / 2) - round(40 * u) + self.pad
+    h = h + self.tile_h * rows - gap + self.pad
+    -- Landscape is short: close up the rows of figures if the card wouldn't fit.
+    local over = h - (self.H - 2 * self.pad)
+    if self.W > self.H and over > 0 and rows > 1 then
+        local new_gap = math.max(round(12 * u), gap - math.ceil(over / (rows - 1)))
+        h = h - (gap - new_gap) * (rows - 1)
+        gap = new_gap
+        self.tile_h = tileH()
+    end
     c.h = h
     c.y = round((self.H - h) / 2)
     self.close_hit.y = c.y

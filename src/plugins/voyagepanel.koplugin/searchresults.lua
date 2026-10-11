@@ -66,7 +66,7 @@ function SearchResults:init()
     self.search = self.ui.search
     self.items = self.search.findall_results or {}
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    local u = self.W / 1072
+    local u = math.min(self.W, self.H) / 1072 -- sizes follow the short side (landscape too)
     self.u = u
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.ges_events = {
@@ -246,7 +246,7 @@ function SearchNav:init()
     self.ui = self.plugin.ui
     self.total = #(self.ui.search.findall_results or {})
     local W, H = Screen:getWidth(), Screen:getHeight()
-    local u = W / 1072
+    local u = math.min(W, H) / 1072
     self.u = u
     self.line = math.max(1, round(2 * u))
     local h = round(112 * u)

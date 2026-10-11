@@ -40,6 +40,8 @@ A StarDict dictionary folder placed in `vendor/dict/` (git-ignored) is included 
 
 ## Deploy (development)
 
+### Kindle Voyage
+
 Exit KOReader on the Voyage (so USB drive mode is available), plug in, then:
 
 ```sh
@@ -47,6 +49,44 @@ tools/deploy.sh
 ```
 
 Restart KOReader to load the changes. Errors land in `koreader/crash.log` on the device.
+
+### reMarkable Paper Pro Move
+
+The reMarkable doesn't mount as a drive; Primer goes over SSH on its USB network (`10.11.99.1`). KOReader is installed through AppLoad (XOVI), at `/home/root/xovi/exthome/appload/koreader`.
+
+One-time setup:
+
+1. Turn on developer mode on the reMarkable (Settings > General > Software > Advanced; it factory-resets the device).
+2. Make a key and an SSH host entry named `remarkable`:
+   ```sh
+   ssh-keygen -t ed25519 -f ~/.ssh/remarkable -N ""
+   ```
+   and in `~/.ssh/config`:
+   ```
+   Host remarkable
+       HostName 10.11.99.1
+       User root
+       IdentityFile ~/.ssh/remarkable
+       IdentitiesOnly yes
+   ```
+3. With the device plugged in, authorize the key (the root password is under Settings > General > Help > About > Copyrights and licenses):
+   ```sh
+   ssh-copy-id -i ~/.ssh/remarkable.pub root@10.11.99.1
+   ```
+
+Each deploy (device awake and plugged in):
+
+```sh
+tools/deploy-remarkable.sh
+```
+
+It lints, finds KOReader on the device, backs up KOReader's settings once (`settings.reader.lua.pre-primer`), and copies the plugin, patches, fonts and sleep screens. Then restart KOReader: AppLoad leaves it running after Exit, so stop it first, then tap KOReader in AppLoad.
+
+```sh
+ssh remarkable 'for p in $(ps | grep "[r]eader.lua" | awk "{print \$1}"); do kill -TERM $p; done'
+```
+
+KOReader can't be started over SSH (AppLoad gives it its window). Errors land in `crash.log` in KOReader's folder on the device. Keep the reMarkable's own orientation lock on while reading, or the system rotates KOReader's window as well as Primer's "Turn for landscape" (Settings > Screen and brightness).
 
 ## Dictionary
 

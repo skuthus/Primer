@@ -267,31 +267,35 @@ end
 
 function Library:layout()
     local W, H = self.width, self.height
-    local pad = round(W * 0.045)
+    -- Sizes follow the shorter side (S), so landscape keeps portrait proportions; the bands,
+    -- stripes and rules still span the full width.
+    local S = math.min(W, H)
+    self.short = S
+    local pad = round(S * 0.045)
     self.pad = pad
 
     -- Striped bands: a shaded header, the books (shaded every other row) and the footer at the
     -- bottom. The book rows share the space between the slim subheader and the footer exactly
     -- (as many as fit at about a header's height), so there's no gap anywhere.
-    local band = round(W * 0.098)
+    local band = round(S * 0.098)
     self.bar = Geom:new{ x = 0, y = 0, w = W, h = band }
-    self.bar_icon = round(W * 0.058) -- header icons keep the size they had in the old, slimmer bar
+    self.bar_icon = round(S * 0.058) -- header icons keep the size they had in the old, slimmer bar
     local sub_h = self:text("Ag", self.face_sub):getSize().h
-    self.sub_y = band + round(W * 0.022)
-    self.list_y = self.sub_y + sub_h + round(W * 0.025)
+    self.sub_y = band + round(S * 0.022)
+    self.list_y = self.sub_y + sub_h + round(S * 0.025)
     local space = H - band - self.list_y
     self.per_page = math.max(1, math.floor(space / band + 0.5))
     self.row_h = math.floor(space / self.per_page)
     self.footer_top = self.list_y + self.per_page * self.row_h
     self.footer_h = H - self.footer_top
-    self.rule = math.max(2, round(W * 0.0028))
+    self.rule = math.max(2, round(S * 0.0028))
     -- The footer continues the stripes: shaded when the last book row is white.
     self.footer_shaded = self.per_page % 2 == 0
     local sort_w = self:text(SORT_LABELS[self.sort], self.face_sub):getSize().w
-    self.sort_hit = Geom:new{ x = W - pad - sort_w - round(W * 0.05), y = self.sub_y - round(W * 0.02),
-        w = sort_w + round(W * 0.05) + pad, h = sub_h + round(W * 0.04) }
-    self.filter_hit = Geom:new{ x = 0, y = self.sub_y - round(W * 0.02), w = self.sort_hit.x, h = sub_h + round(W * 0.04) }
-    self.footer_icon = round(W * 0.064 * 0.55)
+    self.sort_hit = Geom:new{ x = W - pad - sort_w - round(S * 0.05), y = self.sub_y - round(S * 0.02),
+        w = sort_w + round(S * 0.05) + pad, h = sub_h + round(S * 0.04) }
+    self.filter_hit = Geom:new{ x = 0, y = self.sub_y - round(S * 0.02), w = self.sort_hit.x, h = sub_h + round(S * 0.04) }
+    self.footer_icon = round(S * 0.064 * 0.55)
     self.search_hit = Geom:new{ x = 0, y = self.footer_top, w = round(W * 0.6), h = self.footer_h }
     self.pages = math.max(1, math.ceil(#self.books / self.per_page))
     self.page = math.min(self.page, self.pages)
@@ -301,7 +305,7 @@ function Library:layout()
     local text_w = W - self.title_x - pad
     self.title_max = round(text_w * 0.64)
     self.author_max = round(text_w * 0.32)
-    self.dot = math.max(3, round(W * 0.0035))
+    self.dot = math.max(3, round(S * 0.0035))
     self.dot_gap = self.dot * 2
 end
 
@@ -330,7 +334,7 @@ function Library:paintHeader(bb, x, y)
     if self.plugin:isWirelessOn() then
         local s = round(self.bar_icon * 0.55)
         local wifi = self.plugin:icon("s-wifi", s, true)
-        wifi:paintTo(bb, right - round(W * 0.02) - s, cy - round(s / 2))
+        wifi:paintTo(bb, right - round(self.short * 0.02) - s, cy - round(s / 2))
         wifi:free()
     end
 end
@@ -389,7 +393,7 @@ function Library:paintLibrary(bb, x, y)
         label = self.query and string.format(_("Clear “%s”"), self.query) or _("Search")
     end
     if label then
-        local lx = x + pad + ((self.filter == "trash" and not self.query) and 0 or (is + round(W * 0.015)))
+        local lx = x + pad + ((self.filter == "trash" and not self.query) and 0 or (is + round(self.short * 0.015)))
         local search = self:text(label, self.face_search, round(W * 0.45))
         search:paintTo(bb, lx, fy - round(search:getSize().h / 2))
     end
@@ -407,11 +411,11 @@ end
 -- Status filter dropdown under "Showing …".
 function Library:paintFilterMenu(bb, x, y)
     if not self.menu_open then return end
-    local W, pad = self.width, self.pad
-    local row_h = round(W * 0.085)
-    local w = round(W * 0.5)
-    local line = math.max(1, round(W * 0.002))
-    self.menu = Geom:new{ x = pad - round(W * 0.015), y = self.sub_y + round(W * 0.05), w = w, h = row_h * #FILTERS }
+    local S, pad = self.short, self.pad
+    local row_h = round(S * 0.085)
+    local w = round(S * 0.5)
+    local line = math.max(1, round(S * 0.002))
+    self.menu = Geom:new{ x = pad - round(S * 0.015), y = self.sub_y + round(S * 0.05), w = w, h = row_h * #FILTERS }
     local m = self.menu
     bb:paintRect(x + m.x, y + m.y, m.w, m.h, Blitbuffer.COLOR_WHITE)
     bb:paintBorder(x + m.x, y + m.y, m.w, m.h, line, Blitbuffer.COLOR_BLACK)
@@ -419,11 +423,11 @@ function Library:paintFilterMenu(bb, x, y)
         local ry = y + m.y + (i - 1) * row_h
         if i > 1 then bb:paintRect(x + m.x, ry, m.w, line, Blitbuffer.COLOR_LIGHT_GRAY) end
         local t = self:text(FILTER_LABELS[id], self.face_menu)
-        t:paintTo(bb, x + m.x + round(W * 0.04), ry + round((row_h - t:getSize().h) / 2))
+        t:paintTo(bb, x + m.x + round(S * 0.04), ry + round((row_h - t:getSize().h) / 2))
         if id == self.filter then
             local cs = round(row_h * 0.45)
             local check = self.plugin:icon("check", cs)
-            check:paintTo(bb, x + m.x + m.w - round(W * 0.03) - cs, ry + round((row_h - cs) / 2))
+            check:paintTo(bb, x + m.x + m.w - round(S * 0.03) - cs, ry + round((row_h - cs) / 2))
             check:free()
         end
     end
@@ -431,7 +435,7 @@ function Library:paintFilterMenu(bb, x, y)
 end
 
 function Library:paintRow(bb, x, row_y, book, pressed, striped)
-    local W, pad = self.width, self.pad
+    local W, S, pad = self.width, self.short, self.pad
     -- Every other row is lightly shaded, like Finder's lists, so rows are easy to follow.
     if striped then bb:paintRect(x, row_y, W, self.row_h, Blitbuffer.COLOR_GRAY_D) end
     local info = BookList.getBookInfo(book.file)
@@ -444,15 +448,15 @@ function Library:paintRow(bb, x, row_y, book, pressed, striped)
     if is_new then
         badge = TextWidget:new{ text = _("NEW"), face = self.face_badge, fgcolor = Blitbuffer.COLOR_WHITE }
         badge_h = badge:getSize().h
-        badge_w = badge:getSize().w + round(W * 0.014)
+        badge_w = badge:getSize().w + round(S * 0.014)
     end
-    local title = self:text(book.title, self.face_title, self.title_max - (badge and badge_w + round(W * 0.015) or 0))
+    local title = self:text(book.title, self.face_title, self.title_max - (badge and badge_w + round(S * 0.015) or 0))
     local author = self:text(book.author, self.face_author, self.author_max)
     local th = title:getSize().h
     local title_y = row_y + round(self.row_h * 0.12)
     title:paintTo(bb, x + self.title_x, title_y)
     if badge then
-        local bx = x + self.title_x + title:getSize().w + round(W * 0.015)
+        local bx = x + self.title_x + title:getSize().w + round(S * 0.015)
         local by = title_y + round((th - badge_h) / 2)
         bb:paintRoundedRect(bx, by, badge_w, badge_h, Blitbuffer.COLOR_BLACK, round(badge_h * 0.3))
         badge:paintTo(bb, bx + round((badge_w - badge:getSize().w) / 2), by)
@@ -497,7 +501,7 @@ function Library:paintRow(bb, x, row_y, book, pressed, striped)
     end
     if label then
         local t = self:text(label, self.face_tag)
-        local lx = x + self.title_x + total * (self.dot + self.dot_gap) + round(W * 0.008)
+        local lx = x + self.title_x + total * (self.dot + self.dot_gap) + round(S * 0.008)
         t:paintTo(bb, lx, dot_y + round(self.dot / 2) - round(t:getSize().h / 2))
     end
 

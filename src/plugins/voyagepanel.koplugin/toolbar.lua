@@ -83,7 +83,11 @@ end
 
 function Toolbar:layout()
     local W, H = self.W, self.H
-    local u = W / 1072 -- the screenshot was taken at the Voyage's 1072px width
+    -- The screenshot was taken at the Voyage's 1072px width. Sizes follow the shorter side so
+    -- landscape doesn't blow them up; dx is the width beyond the design's (zero in portrait),
+    -- which pushes the right-hand group (Search, ⋮) to the right edge.
+    local u = math.min(W, H) / 1072
+    local dx = W - round(1072 * u)
     self.u = u
     self.line = math.max(1, round(2 * u))
     self.pad = round(47 * u)
@@ -94,7 +98,7 @@ function Toolbar:layout()
     self.top = Geom:new{ x = 0, y = 0, w = W, h = self.row1_y + self.row1_h + self.line }
 
     -- One row: back, settings, Aa and Go To share the left section, then Search, then ⋮.
-    self.search_x0, self.search_x1 = round(694 * u), round(960 * u)
+    self.search_x0, self.search_x1 = round(694 * u) + dx, round(960 * u) + dx
     self.tool_icon = round(44 * u)
     self.tools = {}
     local tool_ids = { "back", "settings", "aa", "goto" }

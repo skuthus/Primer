@@ -36,12 +36,13 @@ local Dialog = InputContainer:extend{
 
 function Dialog:init()
     local W, H = Screen:getWidth(), Screen:getHeight()
-    local u = W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    local u = math.min(W, H) / 1072
     self.u = u
     self.screen = Geom:new{ x = 0, y = 0, w = W, h = H }
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = self.screen } } }
 
-    local box_w = round(W * 0.82)
+    local box_w = round(math.min(W, H) * 0.82) -- portrait width, also in landscape
     local pad = round(48 * u)
     self.pad = pad
     self.border = math.max(2, round(3 * u))
@@ -61,6 +62,17 @@ function Dialog:init()
 
     local title_h = self.title_w and (self.title_w:getSize().h + round(24 * u)) or 0
     local box_h = pad + title_h + self.body_w:getSize().h + pad + self.button_h
+    -- Landscape is short: a long body is cut (with an ellipsis) rather than run off the screen.
+    local over = box_h - (H - 2 * pad)
+    if W > H and over > 0 then
+        local body_h = math.max(round(48 * u), self.body_w:getSize().h - over)
+        self.body_w:free()
+        self.body_w = TextBoxWidget:new{
+            text = self.text, face = Fonts.face("ui", 18), width = box_w - 2 * pad,
+            height = body_h, height_overflow_show_ellipsis = true,
+        }
+        box_h = pad + title_h + self.body_w:getSize().h + pad + self.button_h
+    end
     self.box = Geom:new{ x = round((W - box_w) / 2), y = round((H - box_h) / 2), w = box_w, h = box_h }
     self.title_h = title_h
     self.dimen = self.box

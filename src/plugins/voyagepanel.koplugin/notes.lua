@@ -50,7 +50,7 @@ local NotePopup = InputContainer:extend{
 function NotePopup:init()
     self.ui = self.highlight.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    self.u = math.min(self.W, self.H) / 1072 -- sizes follow the short side (landscape too)
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.cache = {}
 
@@ -94,12 +94,20 @@ end
 -- Box geometry: header / body / footer, below the highlight (or above it, or at the top while editing).
 function NotePopup:layoutBox(body_h)
     local u, W, H = self.u, self.W, self.H
-    local margin = round(W * 0.06)
+    -- Landscape: cap the width so lines stay readable, and centre the box.
+    local span = math.min(W, H * 1.2)
+    local margin = round(span * 0.06)
     self.header_h, self.footer_h = round(128 * u), round(118 * u)
     self.notch = round(26 * u)
-    local w = W - 2 * margin
-    local h = self.header_h + body_h + self.footer_h
+    local w = round(span) - 2 * margin
+    local bx = round((W - w) / 2)
     local sel = self.boxes and self.boxes[1] and Geom.boundingBox(self.boxes)
+    if sel and not self.editing and W > H then
+        -- Landscape is short: shrink the body to fit the roomier side of the highlight.
+        local room = math.max(H - round(20 * u) - (sel.y + sel.h), sel.y - round(20 * u))
+        body_h = math.max(round(160 * u), math.min(body_h, room - self.notch - self.header_h - self.footer_h))
+    end
+    local h = self.header_h + body_h + self.footer_h
     local y, notch_up
     if self.editing or not sel then
         y, notch_up = round(H * 0.03), nil
@@ -108,11 +116,11 @@ function NotePopup:layoutBox(body_h)
     else
         y, notch_up = math.max(round(20 * u), sel.y - self.notch - h), false
     end
-    self.box = Geom:new{ x = margin, y = round(y), w = w, h = h }
+    self.box = Geom:new{ x = bx, y = round(y), w = w, h = h }
     self.notch_up = notch_up
     if sel then
         local last = self.boxes[#self.boxes]
-        self.notch_x = math.min(math.max(last.x + last.w - round(20 * u), margin + self.notch * 2), margin + w - self.notch * 2)
+        self.notch_x = math.min(math.max(last.x + last.w - round(20 * u), bx + self.notch * 2), bx + w - self.notch * 2)
     end
     self.body_y = self.box.y + self.header_h
     self.body_h = body_h
@@ -161,6 +169,16 @@ function NotePopup:startEditing()
         focused = true,
         parent = self,
     }
+    if self.W > self.H then
+        -- Landscape: the keyboard (sized from the short side) can reach the box, so shrink the
+        -- body until the box clears it. The text area is rebuilt at the new height.
+        local over = self.box.y + self.box.h + round(20 * u) - (self.H - self.input:getKeyboardDimen().h)
+        if over > 0 then
+            self:layoutBox(math.max(round(140 * u), self.body_h - over))
+            self.input.height = self.body_h - 2 * gap - frame
+            self.input:initTextBox()
+        end
+    end
     local size = self.input:getSize()
     self.input_x = self.box.x + round((self.box.w - size.w) / 2)
     self.input_y = self.body_y + round((self.body_h - size.h) / 2)

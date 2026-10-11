@@ -35,7 +35,8 @@ local PageFlip = InputContainer:extend{
 function PageFlip:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.P = self.W / 1282
+    -- Sizes follow the shorter side, so landscape keeps the photo's proportions.
+    self.P = math.min(self.W, self.H) / 1282
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.cache = {}
     self.tiles = {}
@@ -78,8 +79,14 @@ function PageFlip:layout()
 
     -- Taller screens than the photo's (e.g. the reMarkable): the page thumbnails take the extra
     -- height and everything from "Back to page" down moves to the bottom. Zero on the Voyage.
-    local ex = math.max(0, self.H - round(1732 * P))
+    -- In landscape the screen is shorter than the photo, so it goes negative: the thumbnails
+    -- shrink and the bottom moves up to fit.
+    local ex = self.H - round(1732 * P)
+    if W <= self.H then ex = math.max(0, ex) end
     self.extra = ex
+    -- Width beyond the photo's (zero in portrait): the right-hand tools and the scrubber's end
+    -- move with the right edge.
+    local dx = W - round(1282 * P)
 
     -- Thumbnails keep the page's proportions; the centre one is ~790x1045 on the photo.
     self.thumb_h = round(1045 * P) + ex
@@ -93,8 +100,8 @@ function PageFlip:layout()
     self.tool_cy = round(180 * P)
     self.tools = {}
     for i, t in ipairs({ { "aa", 693 }, { "contents", 798 }, { "pageflip", 902 }, { "bookmark", 1009 }, { "search", 1114 }, { "kebab", 1222 } }) do
-        self.tools[i] = { id = t[1], cx = round(t[2] * P),
-            hit = Geom:new{ x = round((t[2] - 52) * P), y = round(120 * P), w = round(104 * P), h = round(120 * P) } }
+        self.tools[i] = { id = t[1], cx = round(t[2] * P) + dx,
+            hit = Geom:new{ x = round((t[2] - 52) * P) + dx, y = round(120 * P), w = round(104 * P), h = round(120 * P) } }
     end
     self.library_hit = Geom:new{ x = 0, y = round(120 * P), w = round(360 * P), h = round(120 * P) }
     self.chevron_hit = Geom:new{ x = round(W * 0.35), y = 0, w = round(W * 0.3), h = round(115 * P) }
@@ -105,7 +112,7 @@ function PageFlip:layout()
     self.prev_hit = Geom:new{ x = 0, y = round(1490 * P) + ex, w = round(190 * P), h = round(95 * P) }
     self.next_hit = Geom:new{ x = W - round(190 * P), y = round(1490 * P) + ex, w = round(190 * P), h = round(95 * P) }
     self.grid_hit = Geom:new{ x = 0, y = round(1590 * P) + ex, w = round(160 * P), h = round(100 * P) }
-    self.track_x0, self.track_x1 = round(182 * P), round(1097 * P)
+    self.track_x0, self.track_x1 = round(182 * P), round(1097 * P) + dx
     self.track_cy = round(1640 * P) + ex
     self.knob_r = round(30 * P)
     self.track_hit = Geom:new{ x = self.track_x0 - self.knob_r * 2, y = self.track_cy - round(70 * P),

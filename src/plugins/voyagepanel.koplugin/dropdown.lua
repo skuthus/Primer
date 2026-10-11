@@ -31,7 +31,8 @@ local Dropdown = InputContainer:extend{
 
 function Dropdown:init()
     local W, H = Screen:getWidth(), Screen:getHeight()
-    local u = W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    local u = math.min(W, H) / 1072
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = Geom:new{ x = 0, y = 0, w = W, h = H } } } }
     if Device:hasKeys() and Device.input.group.Back then
         self.key_events = self.key_events or {}

@@ -33,7 +33,8 @@ local GoTo = InputContainer:extend{
 function GoTo:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    self.u = math.min(self.W, self.H) / 1072
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.cache = {}
 

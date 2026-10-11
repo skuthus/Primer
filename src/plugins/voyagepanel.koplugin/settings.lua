@@ -260,7 +260,11 @@ end
 function Settings:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions; design x
+    -- positions right of centre shift by rx so they stay anchored to the right edge (rx is 0
+    -- in portrait).
+    self.u = math.min(self.W, self.H) / 1072
+    self.rx = self.W - round(1072 * self.u)
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.cache = {}
 
@@ -348,7 +352,7 @@ function Settings:paintToggle(bb, tx, ty, on)
 end
 
 function Settings:paintSettings(bb, x, y)
-    local u, W = self.u, self.W
+    local u, W, rx = self.u, self.W, self.rx
     local BLACK, WHITE = Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_WHITE
     bb:paintRect(x, y, W, self.H, WHITE)
     local cur = self:current()
@@ -375,10 +379,10 @@ function Settings:paintSettings(bb, x, y)
     head:paintTo(bb, x + round(64 * u), hy + round((self.header_h - head:getSize().h) / 2))
     local s = round(44 * u)
     local kebab = self.plugin:icon("kebab", s)
-    kebab:paintTo(bb, x + round(914 * u) - round(s / 2), hy + round((self.header_h - s) / 2))
+    kebab:paintTo(bb, x + rx + round(914 * u) - round(s / 2), hy + round((self.header_h - s) / 2))
     kebab:free()
     local close = self.plugin:icon("close", s)
-    close:paintTo(bb, x + round(1015 * u) - round(s / 2), hy + round((self.header_h - s) / 2))
+    close:paintTo(bb, x + rx + round(1015 * u) - round(s / 2), hy + round((self.header_h - s) / 2))
     close:free()
     bb:paintRect(x, y + self.list_y - round(3 * u), W, round(3 * u), Blitbuffer.COLOR_LIGHT_GRAY)
 
@@ -412,13 +416,13 @@ function Settings:paintSettings(bb, x, y)
 
         if row.kind == "page" or row.kind == "choice" or row.kind == "action" then
             local chev = self:text("›", self.face_sign)
-            chev:paintTo(bb, x + round(985 * u) - round(chev:getSize().w / 2), y + ry + round((h - chev:getSize().h) / 2))
+            chev:paintTo(bb, x + rx + round(985 * u) - round(chev:getSize().w / 2), y + ry + round((h - chev:getSize().h) / 2))
         elseif row.kind == "toggle" then
             self:paintToggle(bb, x + W - round(64 * u) - round(104 * u), y + ry + round((h - 56 * u) / 2), row.get() and true or false)
         elseif row.kind == "option" and row.selected then
             local cs = round(44 * u)
             local check = self.plugin:icon("check", cs)
-            check:paintTo(bb, x + round(985 * u) - round(cs / 2), y + ry + round((h - cs) / 2))
+            check:paintTo(bb, x + rx + round(985 * u) - round(cs / 2), y + ry + round((h - cs) / 2))
             check:free()
         end
         if not enabled then
@@ -503,12 +507,12 @@ function Settings:confirmExit()
 end
 
 function Settings:onTap(__, ges)
-    local pos, u = ges.pos, self.u
+    local pos, u, rx = ges.pos, self.u, self.rx
     -- Status chevron or ✕ close; ⋮ opens KOReader's full menu; ‹ title goes back.
     if pos.y < self.status_h and math.abs(pos.x - self.W / 2) < self.W * 0.15 then return self:onClose() end
     if pos.y >= self.header_y and pos.y < self.header_y + self.header_h then
-        if pos.x > round(965 * u) then return self:onClose() end
-        if pos.x > round(860 * u) then
+        if pos.x > rx + round(965 * u) then return self:onClose() end
+        if pos.x > rx + round(860 * u) then
             self:onClose()
             self.ui.menu:onShowMenu()
             return true

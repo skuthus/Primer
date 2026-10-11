@@ -153,7 +153,7 @@ do
 
         local function dress(self)
             local W, H = Screen:getWidth(), Screen:getHeight()
-            local u = W / 1072
+            local u = math.min(W, H) / 1072 -- the shorter side, so landscape isn't oversized
             local pad = math.floor(53 * u + 0.5)
             local thick = math.max(2, math.floor(3 * u + 0.5))
             local thin = math.max(1, math.floor(2 * u + 0.5))
@@ -283,8 +283,19 @@ do
         local ENDS = { hold_release = true, pan_release = true, swipe = true, multiswipe = true }
         local FOLLOWS = { hold_pan = true, hold_release = true, pan = true, pan_release = true }
         local in_corner_gesture = false
+        -- The device's physical top-right corner, wherever the current rotation puts it on screen.
         local function inCorner(p)
-            return p and p.x >= Screen:getWidth() * 0.75 and p.y <= Screen:getHeight() * 0.12
+            if not p then return false end
+            local W, H = Screen:getWidth(), Screen:getHeight()
+            local mode = Screen:getRotationMode()
+            if mode == Screen.DEVICE_ROTATED_CLOCKWISE then
+                return p.x >= W * 0.88 and p.y >= H * 0.75
+            elseif mode == Screen.DEVICE_ROTATED_COUNTER_CLOCKWISE then
+                return p.x <= W * 0.12 and p.y <= H * 0.25
+            elseif mode == Screen.DEVICE_ROTATED_UPSIDE_DOWN then
+                return p.x <= W * 0.25 and p.y >= H * 0.88
+            end
+            return p.x >= W * 0.75 and p.y <= H * 0.12
         end
         local orig = UIManager.handleInputEvent
         function UIManager:handleInputEvent(input_event)

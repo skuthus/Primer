@@ -96,7 +96,8 @@ end
 function AaPanel:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    self.u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    self.u = math.min(self.W, self.H) / 1072
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.tab = G_reader_settings:readSetting("voyage_aa_tab") or "themes"
     self.cache = {}
@@ -127,8 +128,18 @@ function AaPanel:init()
 
     local u = self.u
     -- The sheet is as tall as its contents (laid out for the Voyage, where it starts 40% down):
-    -- the same on the Voyage, shorter on taller screens such as the reMarkable's.
-    self.top_y = math.max(round(self.H * 0.4), self.H - round(869 * u))
+    -- the same on the Voyage, shorter on taller screens such as the reMarkable's. In landscape
+    -- it may rise higher; if the contents still don't fit, everything shrinks to fit.
+    local landscape = self.W > self.H
+    self.top_y = math.max(round(self.H * (landscape and 0.15 or 0.4)), self.H - round(869 * u))
+    if landscape and self.H - self.top_y < round(869 * u) then
+        u = (self.H - self.top_y) / 869
+        self.u = u
+    end
+    -- Design x positions on the right shift by rx (0 in portrait) to stay anchored to the right
+    -- edge; second columns shift by half of it, so the two halves spread across the width.
+    self.rx = self.W - round(1072 * u)
+    self.col2 = round(self.rx / 2)
     self.tab_h = round(108 * u)
     self.content_y = self.top_y + self.tab_h
     self.sheet = Geom:new{ x = 0, y = self.top_y, w = self.W, h = self.H - self.top_y }
@@ -287,7 +298,7 @@ function AaPanel:paintThemes(bb, x, y)
     for i, t in ipairs(items) do
         if i > 6 then break end
         local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
-        local bx = x + round((82 + col * 470) * u)
+        local bx = x + round((82 + col * 470) * u) + col * self.col2
         local by = cy0 + round((72 + row * 158) * u)
         self:paintThemeIcon(bb, bx, by, s, t.icon)
         local is_sel = i == selected
@@ -312,7 +323,7 @@ function AaPanel:paintThemes(bb, x, y)
     end
 
     -- Save Current Settings
-    local btn = Geom:new{ x = round(53 * u), y = self.content_y + round(517 * u), w = round(964 * u), h = round(92 * u) }
+    local btn = Geom:new{ x = round(53 * u), y = self.content_y + round(517 * u), w = round(964 * u) + self.rx, h = round(92 * u) }
     bb:paintBorder(x + btn.x, y + btn.y, btn.w, btn.h, self.line, Blitbuffer.COLOR_BLACK)
     local save = self:text(_("Save Current Settings"), self.face_text)
     save:paintTo(bb, x + btn.x + round((btn.w - save:getSize().w) / 2), y + btn.y + round((btn.h - save:getSize().h) / 2))
@@ -320,7 +331,7 @@ function AaPanel:paintThemes(bb, x, y)
 
     -- Manage Themes
     local my = self.content_y + round(645 * u)
-    bb:paintRect(x + round(53 * u), y + my, round(964 * u), self.thick, Blitbuffer.COLOR_BLACK)
+    bb:paintRect(x + round(53 * u), y + my, round(964 * u) + self.rx, self.thick, Blitbuffer.COLOR_BLACK)
     self:chevronRow(bb, x, y, my + self.thick, round(112 * u), _("Manage Themes"), nil, function() self:manageThemes() end)
 end
 
@@ -415,8 +426,9 @@ function AaPanel:fontFace(name, size)
 end
 
 function AaPanel:paintSteps(bb, x, y, cy, n, level, seg_w, gap, on_step)
-    local u = self.u
-    local x0 = round(413 * u)
+    -- Right-aligned: in landscape the whole stepper moves over by rx.
+    local u, rx = self.u, self.rx
+    local x0 = rx + round(413 * u)
     local h = round(14 * u)
     for i = 1, n do
         local sx = x0 + (i - 1) * (seg_w + gap)
@@ -433,19 +445,19 @@ function AaPanel:paintSteps(bb, x, y, cy, n, level, seg_w, gap, on_step)
             function() on_step(i) end)
     end
     local minus = self:text("—", self.face_text)
-    minus:paintTo(bb, x + round(338 * u), y + cy - round(minus:getSize().h / 2))
+    minus:paintTo(bb, x + rx + round(338 * u), y + cy - round(minus:getSize().h / 2))
     local plus = self:text("+", self.face_sign)
-    plus:paintTo(bb, x + round(945 * u), y + cy - round(plus:getSize().h / 2))
-    self:hit(Geom:new{ x = round(300 * u), y = cy - round(50 * u), w = round(100 * u), h = round(100 * u) },
+    plus:paintTo(bb, x + rx + round(945 * u), y + cy - round(plus:getSize().h / 2))
+    self:hit(Geom:new{ x = rx + round(300 * u), y = cy - round(50 * u), w = round(100 * u), h = round(100 * u) },
         function() on_step(math.max(1, level - 1)) end)
-    self:hit(Geom:new{ x = round(920 * u), y = cy - round(50 * u), w = round(152 * u), h = round(100 * u) },
+    self:hit(Geom:new{ x = rx + round(920 * u), y = cy - round(50 * u), w = round(152 * u), h = round(100 * u) },
         function() on_step(math.min(n, level + 1)) end)
 end
 
 function AaPanel:paintFont(bb, x, y)
     local u, cy0 = self.u, self.content_y
     local cur = self:shown()
-    local divider = function(dy) bb:paintRect(x + round(62 * u), y + dy, round(946 * u), self.line, Blitbuffer.COLOR_BLACK) end
+    local divider = function(dy) bb:paintRect(x + round(62 * u), y + dy, round(946 * u) + self.rx, self.line, Blitbuffer.COLOR_BLACK) end
 
     -- Font Family
     local row_h = round(168 * u)
@@ -491,15 +503,16 @@ function AaPanel:paintLayout(bb, x, y)
     local cur = self:shown()
     local thin, thickb = self.line, round(5 * u)
     local L = math.max(1, round(2 * u))
-    local function label(str, lx, ly)
+    local col2 = self.col2
+    local function label(str, lx, ly, dx)
         local w = self:text(str, self.face_text)
-        w:paintTo(bb, x + round(lx * u), y + cy0 + round(ly * u) - round(w:getSize().h / 2))
+        w:paintTo(bb, x + round(lx * u) + (dx or 0), y + cy0 + round(ly * u) - round(w:getSize().h / 2))
     end
     local function option(rect, selected, lines, gap, fn)
         self:pageIcon(bb, x + rect.x, y + rect.y, rect.w, rect.h, selected and thickb or thin, lines, gap)
         self:hit(Geom:new{ x = rect.x - round(10 * u), y = rect.y - round(10 * u), w = rect.w + round(20 * u), h = rect.h + round(20 * u) }, fn)
     end
-    local box = function(lx, ly, w, h) return Geom:new{ x = round(lx * u), y = cy0 + round(ly * u), w = round(w * u), h = round(h * u) } end
+    local box = function(lx, ly, w, h, dx) return Geom:new{ x = round(lx * u) + (dx or 0), y = cy0 + round(ly * u), w = round(w * u), h = round(h * u) } end
 
     -- Orientation
     label(_("Orientation"), 57, 67)
@@ -508,11 +521,11 @@ function AaPanel:paintLayout(bb, x, y)
     option(box(172, 127, 117, 86), landscape, evenLines(5, 0.15, 0.85, L), round(7 * u), function() self:setLandscape(true) end)
 
     -- Margins
-    label(_("Margins"), 478, 67)
+    label(_("Margins"), 478, 67, col2)
     local m = nearest(MARGINS, cur.h, "h")
     local insets = { 0.08, 0.15, 0.25 }
     for i, inset in ipairs(insets) do
-        option(box(478 + (i - 1) * 168, 127, 138, 77), m == i, evenLines(6, inset, 1 - inset, L), round(4 * u),
+        option(box(478 + (i - 1) * 168, 127, 138, 77, col2), m == i, evenLines(6, inset, 1 - inset, L), round(4 * u),
             function() self:apply{ h = MARGINS[i].h, t = MARGINS[i].t } end)
     end
 
@@ -524,11 +537,11 @@ function AaPanel:paintLayout(bb, x, y)
         round(7 * u), function() self:setLeftAligned(true) end)
 
     -- Spacing
-    label(_("Spacing"), 478, 333)
+    label(_("Spacing"), 478, 333, col2)
     local sp = nearest(SPACINGS, cur.spacing)
     local gaps = { 6, 10, 15 }
     for i, g in ipairs(gaps) do
-        option(box(478 + (i - 1) * 168, 393, 138, 77), sp == i, evenLines(4 - (i == 3 and 1 or 0), 0.15, 0.85, L), round(g * u),
+        option(box(478 + (i - 1) * 168, 393, 138, 77, col2), sp == i, evenLines(4 - (i == 3 and 1 or 0), 0.15, 0.85, L), round(g * u),
             function() self:apply{ spacing = SPACINGS[i] } end)
     end
 end
@@ -551,7 +564,7 @@ end
 
 function AaPanel:paintMore(bb, x, y)
     local u, cy0 = self.u, self.content_y
-    local divider = function(dy) bb:paintRect(x + round(62 * u), y + dy, round(884 * u), self.line, Blitbuffer.COLOR_BLACK) end
+    local divider = function(dy) bb:paintRect(x + round(62 * u), y + dy, round(884 * u) + self.rx, self.line, Blitbuffer.COLOR_BLACK) end
     local progress = G_reader_settings:readSetting("voyage_reading_progress") or "page"
     local progress_label = PROGRESS[1].label
     for __, p in ipairs(PROGRESS) do if p.id == progress then progress_label = p.label end end
@@ -574,7 +587,7 @@ function AaPanel:paintMore(bb, x, y)
             sub:paintTo(bb, x + round(62 * u), ty + t:getSize().h)
             sub:free()
         end
-        self:paintToggle(bb, x + round(840 * u), y + ry + round((row - 56 * u) / 2), on)
+        self:paintToggle(bb, x + self.rx + round(840 * u), y + ry + round((row - 56 * u) / 2), on)
         self:hit(Geom:new{ x = 0, y = ry, w = self.W, h = row }, fn)
     end
 
@@ -657,7 +670,7 @@ function AaPanel:paintSubview(bb, x, y)
             check:paintTo(bb, x + self.W - round(110 * u), y + ry + round((row_h - 44 * u) / 2))
             check:free()
         end
-        bb:paintRect(x + round(62 * u), y + ry + row_h - self.line, round(946 * u), self.line, Blitbuffer.COLOR_LIGHT_GRAY)
+        bb:paintRect(x + round(62 * u), y + ry + row_h - self.line, round(946 * u) + self.rx, self.line, Blitbuffer.COLOR_LIGHT_GRAY)
         self:hit(Geom:new{ x = 0, y = ry, w = self.W, h = row_h }, function()
             if self.subview == "themes" then
                 return self:deleteTheme(item.id)

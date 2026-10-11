@@ -53,6 +53,9 @@ function QuickPanel:init()
     self.text_cache = {}
 
     self.width = Screen:getWidth()
+    -- Sizes follow the shorter side, so landscape keeps the portrait proportions; spans across
+    -- the screen (columns, rules, right-anchored items) still use the full width.
+    self.S = math.min(self.width, Screen:getHeight())
     local screen = Geom:new{ x = 0, y = 0, w = self.width, h = Screen:getHeight() }
     self.ges_events = {
         Tap = { GestureRange:new{ ges = "tap", range = screen } },
@@ -90,25 +93,25 @@ function QuickPanel:text(str, f)
 end
 
 function QuickPanel:layout()
-    local W = self.width
-    local pad = round(W * 0.055)
-    local y = round(W * 0.04)
+    local W, S = self.width, self.S
+    local pad = round(S * 0.055)
+    local y = round(S * 0.04)
     self.pad = pad
 
     -- Header: name and clock on the left, battery on the right.
     self.header_y = y
     local name_h = self:text("Ag", self.face_title):getSize().h
-    y = y + name_h + round(W * 0.006)
+    y = y + name_h + round(S * 0.006)
     self.clock_y = y
-    y = y + self:text("Ag", self.face_text):getSize().h + round(W * 0.065)
+    y = y + self:text("Ag", self.face_text):getSize().h + round(S * 0.065)
 
     -- Round buttons in four equal columns.
-    local d = round(W * 0.088)
+    local d = round(S * 0.088)
     self.btn_r = round(d / 2)
-    self.btn_border = math.max(2, round(W * 0.0028))
+    self.btn_border = math.max(2, round(S * 0.0028))
     self.btn_icon = round(d * 0.5)
     self.btn_cy = y + self.btn_r
-    self.btn_label_y = y + d + round(W * 0.022)
+    self.btn_label_y = y + d + round(S * 0.022)
     local label_h = self:text("Ag", self.face_text):getSize().h
     self.buttons = {}
     for i, id in ipairs({ "airplane", "dark", "sync", "settings" }) do
@@ -116,49 +119,49 @@ function QuickPanel:layout()
         self.buttons[i] = {
             id = id,
             cx = cx,
-            hit = Geom:new{ x = cx - round(W / 8), y = y - round(W * 0.02), w = round(W / 4), h = d + label_h + round(W * 0.06) },
+            hit = Geom:new{ x = cx - round(W / 8), y = y - round(S * 0.02), w = round(W / 4), h = d + label_h + round(S * 0.06) },
         }
     end
-    y = self.btn_label_y + label_h + round(W * 0.05)
+    y = self.btn_label_y + label_h + round(S * 0.05)
 
     self.divider_y = y
-    y = y + round(W * 0.05)
+    y = y + round(S * 0.05)
 
     -- Brightness label row, with Auto Brightness on the right.
     self.bright_label_y = y
     local row_h = self:text("Ag", self.face_text):getSize().h
-    local box = round(W * 0.042)
+    local box = round(S * 0.042)
     self.check_box = Geom:new{ x = W - pad - box, y = y + round((row_h - box) / 2), w = box, h = box }
-    self.auto_hit = Geom:new{ x = round(W / 2), y = y - round(W * 0.02), w = round(W / 2), h = row_h + round(W * 0.04) }
-    y = y + row_h + round(W * 0.04)
+    self.auto_hit = Geom:new{ x = round(W / 2), y = y - round(S * 0.02), w = round(W / 2), h = row_h + round(S * 0.04) }
+    y = y + row_h + round(S * 0.04)
 
     -- Value above the knob, then the slider row.
     self.value_y = y
-    y = y + self:text("24", self.face_small):getSize().h + round(W * 0.01)
-    self.knob_r = round(W * 0.03)
+    y = y + self:text("24", self.face_small):getSize().h + round(S * 0.01)
+    self.knob_r = round(S * 0.03)
     self.slider_cy = y + self.knob_r
     local minus = self:text("−", self.face_sign):getSize()
     local plus = self:text("+", self.face_sign):getSize()
     self.minus_x = pad
     self.plus_x = W - pad - plus.w
-    self.track_x0 = pad + minus.w + round(W * 0.06) + self.knob_r
-    self.track_x1 = self.plus_x - round(W * 0.06) - self.knob_r
+    self.track_x0 = pad + minus.w + round(S * 0.06) + self.knob_r
+    self.track_x1 = self.plus_x - round(S * 0.06) - self.knob_r
     local hit_h = self.knob_r * 4
     self.minus_hit = Geom:new{ x = 0, y = self.slider_cy - hit_h / 2, w = self.track_x0 - self.knob_r, h = hit_h }
     self.plus_hit = Geom:new{ x = self.track_x1 + self.knob_r, y = self.slider_cy - hit_h / 2, w = W - self.track_x1 - self.knob_r, h = hit_h }
     self.slider_hit = Geom:new{ x = self.track_x0 - self.knob_r, y = self.slider_cy - hit_h / 2,
         w = self.track_x1 - self.track_x0 + 2 * self.knob_r, h = hit_h }
     self.brightness_area = Geom:new{ x = 0, y = self.value_y, w = W, h = self.slider_cy + hit_h / 2 - self.value_y }
-    y = self.slider_cy + self.knob_r + round(W * 0.075)
+    y = self.slider_cy + self.knob_r + round(S * 0.075)
 
     -- Closing chevron.
-    self.chevron_w = round(W * 0.1)
+    self.chevron_w = round(S * 0.1)
     self.chevron_h = round(self.chevron_w / 4)
     self.chevron_y = y
-    self.chevron_hit = Geom:new{ x = round(W * 0.3), y = y - round(W * 0.04), w = round(W * 0.4), h = self.chevron_h + round(W * 0.08) }
-    y = y + self.chevron_h + round(W * 0.035)
+    self.chevron_hit = Geom:new{ x = round(W * 0.3), y = y - round(S * 0.04), w = round(W * 0.4), h = self.chevron_h + round(S * 0.08) }
+    y = y + self.chevron_h + round(S * 0.035)
 
-    self.border = math.max(2, round(W * 0.002))
+    self.border = math.max(2, round(S * 0.002))
     self.dimen = Geom:new{ x = 0, y = 0, w = W, h = y + self.border }
 end
 
@@ -221,7 +224,7 @@ function QuickPanel:paintPanel(bb, x, y)
     clock_w:paintTo(bb, x + pad, y + self.clock_y)
     clock_w:free()
     local name_h = self:text(name, self.face_title):getSize().h
-    self.plugin:paintBattery(bb, x + W - pad, y + self.header_y + round(name_h / 2), round(W * 0.022), self.face_text)
+    self.plugin:paintBattery(bb, x + W - pad, y + self.header_y + round(name_h / 2), round(self.S * 0.022), self.face_text)
 
     -- Buttons
     for __, b in ipairs(self.buttons) do
@@ -246,7 +249,7 @@ function QuickPanel:paintPanel(bb, x, y)
     if self.has_auto then
         local cb = self.check_box
         local auto_w = self:text(_("Auto Brightness"), self.face_text)
-        auto_w:paintTo(bb, x + cb.x - round(W * 0.025) - auto_w:getSize().w, y + self.bright_label_y)
+        auto_w:paintTo(bb, x + cb.x - round(self.S * 0.025) - auto_w:getSize().w, y + self.bright_label_y)
         bb:paintBorder(x + cb.x, y + cb.y, cb.w, cb.h, self.btn_border, BLACK, round(cb.w * 0.12))
         if self.plugin.auto then
             local inset = round(cb.w * 0.12)
@@ -275,7 +278,7 @@ function QuickPanel:paintSlider(bb, x, y)
     self:text("+", self.face_sign):paintTo(bb, x + self.plus_x, cy - round(sign_h / 2))
 
     local kx, level = self:knobX()
-    local thin, thick = self.border, math.max(4, round(self.width * 0.0075))
+    local thin, thick = self.border, math.max(4, round(self.S * 0.0075))
     bb:paintRect(x + self.track_x0, cy - round(thin / 2), self.track_x1 - self.track_x0, thin, BLACK)
     bb:paintRect(x + self.track_x0, cy - round(thick / 2), kx - self.track_x0, thick, BLACK)
     bb:paintCircle(x + kx, cy, self.knob_r, WHITE)

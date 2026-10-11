@@ -44,7 +44,8 @@ local Prompt = InputContainer:extend{
 
 function Prompt:init()
     local W, H = Screen:getWidth(), Screen:getHeight()
-    local u = W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    local u = math.min(W, H) / 1072
     self.u = u
     self.ges_events = { Tap = { GestureRange:new{ ges = "tap", range = Geom:new{ x = 0, y = 0, w = W, h = H } } } }
     if Device:hasKeys() and Device.input.group.Back then
@@ -54,7 +55,7 @@ function Prompt:init()
     self.pad = round(48 * u)
     self.border = math.max(2, round(3 * u))
     self.line = math.max(1, round(2 * u))
-    local w = round(W * 0.88)
+    local w = round(math.min(W, H) * 0.88) -- portrait width, also in landscape
     local inner = w - 2 * self.pad
     self.widgets = {}
     local function keep(widget) table.insert(self.widgets, widget) return widget end

@@ -36,7 +36,8 @@ local SearchBar = InputContainer:extend{
 
 function SearchBar:init()
     local W = Screen:getWidth()
-    local u = W / 1072
+    -- Sizes follow the short side, so landscape keeps portrait proportions.
+    local u = math.min(W, Screen:getHeight()) / 1072
     self.u = u
     self.bar = Geom:new{ x = 0, y = 0, w = W, h = round(118 * u) }
     self.dimen = self.bar

@@ -1,9 +1,9 @@
 --[[--
 Kindle-style page grid (the toolbar's and page flip's grid button): the book's pages as
-thumbnails, three by three, with page numbers under them and the page you're reading
+thumbnails, three by three (four by two in landscape), with page numbers under them and the page you're reading
 outlined. The chapter of the first page shows above the grid; a track at the bottom shows
 where you are in the book (tap it to jump). Swipe or use the page buttons for the next
-or previous nine; tap a page to go there.
+or previous screenful; tap a page to go there.
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")
@@ -19,7 +19,10 @@ local logger = require("logger")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local COLS, ROWS = 3, 3
+-- Columns and rows of thumbnails. Thumbnails take the screen's shape, so landscape's wide
+-- pages go four across in two rows (at about portrait's thumbnail size).
+local GRID_PORTRAIT = { 3, 3 }
+local GRID_LANDSCAPE = { 4, 2 }
 
 local function round(v) return math.floor(v + 0.5) end
 
@@ -35,7 +38,8 @@ local PageGrid = InputContainer:extend{
 function PageGrid:init()
     self.ui = self.plugin.ui
     self.W, self.H = Screen:getWidth(), Screen:getHeight()
-    local u = self.W / 1072
+    -- Sizes scale from the shorter side, so landscape keeps portrait proportions.
+    local u = math.min(self.W, self.H) / 1072
     self.u = u
     self.dimen = Geom:new{ x = 0, y = 0, w = self.W, h = self.H }
     self.ges_events = {
@@ -52,7 +56,9 @@ function PageGrid:init()
     self.tiles = {}
     self.pages = self.ui.document:getPageCount()
     self.current = self.ui:getCurrentPage()
-    self.per_screen = COLS * ROWS
+    local grid = self.W > self.H and GRID_LANDSCAPE or GRID_PORTRAIT
+    self.cols, self.rows = grid[1], grid[2]
+    self.per_screen = self.cols * self.rows
     self.first = math.floor((self.current - 1) / self.per_screen) * self.per_screen + 1
 
     self.face_header = Fonts.face("ui_bold", 21)
@@ -72,8 +78,8 @@ function PageGrid:init()
     local grid_h = self.H - grid_y - self.footer_h
     self.num_h = round(52 * u)
     self.gap_x = round(44 * u)
-    local cell_w = (self.W - 2 * self.pad - (COLS - 1) * self.gap_x) / COLS
-    local cell_h = grid_h / ROWS
+    local cell_w = (self.W - 2 * self.pad - (self.cols - 1) * self.gap_x) / self.cols
+    local cell_h = grid_h / self.rows
     self.thumb_h = math.floor(math.min(cell_h - self.num_h - round(24 * u), cell_w * self.H / self.W))
     self.thumb_w = math.floor(self.thumb_h * self.W / self.H)
     self.cell_w, self.cell_h, self.grid_y = cell_w, cell_h, grid_y
@@ -96,7 +102,7 @@ function PageGrid:text(str, f, max_width)
 end
 
 function PageGrid:cellRect(i)
-    local col, row = (i - 1) % COLS, math.floor((i - 1) / COLS)
+    local col, row = (i - 1) % self.cols, math.floor((i - 1) / self.cols)
     local cx = self.pad + col * (self.cell_w + self.gap_x)
     local cy = self.grid_y + row * self.cell_h
     return Geom:new{ x = round(cx + (self.cell_w - self.thumb_w) / 2), y = round(cy + round(12 * self.u)),
@@ -165,7 +171,7 @@ function PageGrid:paintGrid(bb, x, y)
         n:paintTo(bb, x + r.x + round((r.w - n:getSize().w) / 2), y + r.y + r.h + round((self.num_h - n:getSize().h) / 2))
     end
 
-    -- Track: the whole book, the nine pages on screen as a bar, your page as a knob.
+    -- Track: the whole book, the pages on screen as a bar, your page as a knob.
     local x0, x1, cy = self.track_x0, self.track_x1, y + self.track_cy
     bb:paintRect(x + x0, cy - self.line, x1 - x0, 2 * self.line, Blitbuffer.COLOR_GRAY)
     local function px(p) return x0 + round((x1 - x0) * (p - 1) / math.max(1, self.pages - 1)) end
