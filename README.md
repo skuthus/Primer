@@ -20,6 +20,7 @@ Target: Kindle Voyage, firmware 5.13.6, jailbroken, KOReader v2026.07.1 (`kindle
 | `src/screensavers/` | Public domain sleep screen collections (Doré, Tenniel, Hiroshige, Haeckel), installed to `koreader/screensavers/primer/`; sources in `CREDITS.md` |
 | `INSTALL.txt` | End-user install guide, shipped in the release zip |
 | `tools/package.sh` | Build the release zip (`dist/Primer-<version>.zip`) |
+| `tools/deploy-remarkable.sh` | Lint, then copy Primer into KOReader on a reMarkable over SSH (USB, host `remarkable` in `~/.ssh/config`) |
 | `tools/lint/` | Static checks (syntax, unknown globals, `_` shadowing). There's no KOReader for macOS, so these run before every deploy |
 | `tools/deploy.sh` | Lint, then copy everything onto a USB-mounted Voyage |
 | `design/` | Reference screenshots and icon previews |

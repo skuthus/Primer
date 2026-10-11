@@ -7,7 +7,7 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 2 -- 2: sleep after 10 minutes, like a Kindle
+local SETUP_VERSION = 3 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -69,6 +69,17 @@ if reading then
     if not (kindle_fonts and exists("/usr/java/lib/fonts/Bookerly-Regular.ttf")) then reading.cre_font = "Literata" end
     for k, v in pairs(reading) do
         if not G_reader_settings:has(k) then G_reader_settings:saveSetting(k, v) end
+    end
+end
+
+-- reMarkable: no hyphenation, and publisher font families ignored so every paragraph uses the
+-- chosen font, matching the Kindle as set up by hand (only where not already chosen).
+if Device:isRemarkable() then
+    if not G_reader_settings:has("hyphenation") then G_reader_settings:saveSetting("hyphenation", false) end
+    local tweaks = G_reader_settings:readSetting("style_tweaks") or {}
+    if tweaks.font_family_all_inherit == nil then
+        tweaks.font_family_all_inherit = true
+        G_reader_settings:saveSetting("style_tweaks", tweaks)
     end
 end
 

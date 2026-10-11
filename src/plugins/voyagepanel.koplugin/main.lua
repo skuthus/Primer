@@ -959,7 +959,8 @@ function VoyagePanel:showLibrary()
 end
 
 function VoyagePanel:hasLightSensor()
-    return Device:hasLightSensor() and readLux() ~= nil
+    -- Not every device (or KOReader version) has hasLightSensor.
+    return Device.hasLightSensor ~= nil and Device:hasLightSensor() and readLux() ~= nil
 end
 
 function VoyagePanel:setAuto(enabled)
@@ -989,6 +990,20 @@ end
 
 -- Kindle-style refresh: flash-free (REAGL) page turns with no forced flash every N pages
 -- (full_refresh_count = 0), and one clean full refresh when a new chapter starts.
+-- reMarkable: a book's own fonts never override the chosen font (Primer has no switch for them).
+-- Books opened there before Primer may carry their own "embedded fonts on": turn that off as
+-- they open, unless embedded fonts were deliberately made the default for all books.
+function VoyagePanel:onReaderReady()
+    if not Device:isRemarkable() then return end
+    local doc = self.ui.document
+    local conf = doc and self.ui.rolling and doc.configurable
+    if conf and conf.embedded_fonts == 1 and G_reader_settings:readSetting("copt_embedded_fonts", 0) == 0 then
+        conf.embedded_fonts = 0
+        doc:setEmbeddedFonts(0)
+        self.ui:handleEvent(Event:new("UpdatePos"))
+    end
+end
+
 function VoyagePanel:onPageUpdate(pageno)
     if pageno and self.ui.toc and G_reader_settings:nilOrTrue("voyage_chapter_flash")
             and self.ui.toc:isChapterStart(pageno) then

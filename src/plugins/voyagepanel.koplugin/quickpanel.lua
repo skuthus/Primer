@@ -35,7 +35,7 @@ local QuickPanel = InputContainer:extend{
 -- synthetic "off" step 0; skip it so the slider matches the Kindle's 0-24.
 function QuickPanel.frontlightRange()
     local powerd = Device:getPowerDevice()
-    local lo = Device:canTurnFrontlightOff() and powerd.fl_min or powerd.fl_min + 1
+    local lo = (Device.canTurnFrontlightOff ~= nil and Device:canTurnFrontlightOff()) and powerd.fl_min or powerd.fl_min + 1
     return lo, powerd.fl_max
 end
 
