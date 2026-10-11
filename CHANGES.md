@@ -5,6 +5,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 ## Planned
 
 ### Reading
+- [x] **Smaller book text on the Paperwhite 12** (2026-10-11, confirmed by user). Size 4 (the default) read a bit big on the 7" screen, so on that model the whole Aa ladder and the presets run 10% smaller (`Fonts.bookSize`): Size 4 is 20 there instead of 22. Setup v9 brings a size still at the old default down; a size chosen by hand stays. Other models unchanged.
 - [x] **reMarkable Paper Pro Move support** (2026-10-11, confirmed by user; reMarkable only, nothing changes on the Kindle):
   - `tools/deploy-remarkable.sh`: lint, then copy Primer into KOReader over SSH (USB networking, host `remarkable`), backing up KOReader's settings once as `settings.reader.lua.pre-primer`.
   - Older KOReader (2026.03): light-sensor and frontlight checks guarded (fixed a quick panel crash).
@@ -55,7 +56,11 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - No re-layout icons in the top-left corner after a font or layout change (KOReader's partial-rerendering indicator); the fast chapter-first re-layout is kept.
   - Pinch / spread move one Aa size step (up to three for a long pinch) instead of by pinch distance, with a "Size N" note (the Aa step) instead of KOReader's raw size.
 
+### Launcher
+- [x] **"Primer" on the Kindle home screen** (2026-10-11, confirmed by user on the Paperwhite 12). On Kindles jailbroken with the hdnext stack (KPM), KOReader shows on the home screen as a "KOReader" scriptlet with KOReader's cover. Primer ships its own: `src/scriptlets/Primer.sh`, named "Primer" with Primer's cover, starting KOReader through KPM. The logo (`tools/logo.py`, `design/primer-logo.png`): the wordmark in Inter Bold over a swoosh in the spirit of Amazon's smile, except that where Amazon's arrow points from a to z, Primer's curve rises into a folded page corner. `deploy-mtp.sh` and the release zip put it in `documents/`.
+
 ### Settings
+- [x] **Connect to computer on MediaTek Kindles** (2026-10-11, confirmed by user on the Paperwhite 12). The prompt never appeared there: Primer told a computer from a charger through the i.MX USB gadget, which those models don't have. They report the port type through the charger driver instead (`/sys/class/power_supply/*/type`: SDP/CDP for a computer, DCP for a charger), and the MTP gadget's `/sys/class/udc/*/state` is "configured" while the computer holds the connection. Primer and the handoff script read those; KOReader freezes volumd (which runs MTP) while it's up, so Primer still closes for the transfer and comes back when the cable comes out. Dialog says "file transfer" and "eject or unplug".
 - [x] **Kindle-style Settings** (`settings.lua`, modeled on `design/reference/kindle-settings-screenshot.png`). Opens from the quick panel's All Settings, the toolbar's settings and the library header; KOReader's full menu stays behind ⋮ (and Advanced > All KOReader settings). Confirmed by user.
   - Kumba (rename) · Wi-Fi (wireless toggle, networks) · Device options (battery, sleep after, start with last book/library, ask to connect to a computer, swap page-turn buttons, restart KOReader) · Screen and brightness (brightness panel, auto brightness, dark mode, full page refresh never/20/40, chapter refresh, sleep screen illustrations/cover/none) · Reading (Aa, reading progress, clock, highlight menu) · Home and Library (Kindle-style library, sort) · Advanced (KOReader menu, SSH server) · About.
   - Rows: icon, bold title, subtitle (current value for choices), ›, switches for toggles; choices open a pick-one list with a check mark. ‹ title, swipe right or Back go up a level; chevron or ✕ close.

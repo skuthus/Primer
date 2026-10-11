@@ -36,4 +36,6 @@ put_tree "$ROOT/src/patches"      "$KINDLE/koreader/patches"
 put_tree "$ROOT/src/extensions"   "$KINDLE/extensions"
 put_tree "$ROOT/src/fonts"        "$KINDLE/koreader/fonts/primer"
 put_tree "$ROOT/src/screensavers" "$KINDLE/koreader/screensavers/primer"
+# The home screen launcher ("Primer", with its cover) for Kindles on the hdnext stack.
+put_tree "$ROOT/src/scriptlets"    "$KINDLE/documents"
 echo "Deployed to $KINDLE"

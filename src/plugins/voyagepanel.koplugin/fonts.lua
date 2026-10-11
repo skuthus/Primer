@@ -6,6 +6,7 @@ own default. Amazon's fonts are proprietary and are never bundled.
     Fonts.face("ui_bold", 18)    Fonts.path("ui")  -- path KOReader's font settings understand
 --]]
 
+local Device = require("device")
 local Font = require("ui/font")
 local lfs = require("libs/libkoreader-lfs")
 
@@ -29,6 +30,19 @@ local function exists(path)
 end
 
 local Fonts = {}
+
+-- Book text sizes were tuned on the Voyage (6"). On the 7" Paperwhite (2024) the same sizes read
+-- a little big (user, 2026-10-11), so its whole size ladder runs 10% smaller: Size 4 is 20
+-- there instead of 22. Other models keep the Voyage's sizes.
+local BOOK_SCALE = {
+    KindlePaperWhite6 = 0.9,
+}
+
+-- A Voyage-tuned book font size as this device should use it.
+function Fonts.bookSize(size)
+    local scale = BOOK_SCALE[Device.model] or 1
+    return math.floor(size * scale + 0.5)
+end
 
 -- File for a role (Kindle font, else bundled), or nil if only KOReader's default is left.
 function Fonts.path(role)

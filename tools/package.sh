@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build a release zip whose folders go straight onto a Kindle (or another KOReader device):
-#   dist/Primer-<version>.zip  =  koreader/{plugins,patches,fonts/primer}  +  extensions/primer
+#   dist/Primer-<version>.zip  =  koreader/{plugins,patches,fonts/primer}  +  extensions/primer  +  documents/Primer.sh
 # Options:
 #   --koreader <koreader-kindle*.zip>  also include KOReader itself (one zip installs both)
 #   A StarDict dictionary folder in vendor/dict/ is included in koreader/data/dict/.
@@ -34,6 +34,7 @@ cp "$ROOT"/src/patches/*.lua "$STAGE/koreader/patches/"
 cp "$ROOT"/src/fonts/* "$STAGE/koreader/fonts/primer/"
 cp -R "$ROOT/src/screensavers/." "$STAGE/koreader/screensavers/primer/"
 cp -R "$ROOT/src/extensions/." "$STAGE/extensions/"
+mkdir -p "$STAGE/documents" && cp "$ROOT"/src/scriptlets/*.sh "$STAGE/documents/"
 if [ -d "$ROOT/vendor/dict" ] && [ -n "$(ls -A "$ROOT/vendor/dict")" ]; then
 	mkdir -p "$STAGE/koreader/data/dict"
 	cp -R "$ROOT/vendor/dict/." "$STAGE/koreader/data/dict/"

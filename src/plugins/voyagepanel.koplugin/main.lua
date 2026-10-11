@@ -477,15 +477,48 @@ end
 -- USB: KOReader lives on the drive the Kindle lends to a computer, so it can't stay running
 -- while mounted. When a computer is plugged in, offer to step aside; a small script brings
 -- KOReader back once the drive is ejected (tools/usb-handoff.sh).
-local USB_GADGET = "/sys/devices/platform/fsl-usb2-udc/gadget/connected"
+local USB_GADGET = "/sys/devices/platform/fsl-usb2-udc/gadget/connected" -- i.MX Kindles (USB drive)
+local POWER_SUPPLIES = "/sys/class/power_supply"
 local PLUGIN_DIR = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$")
 
-local function computerConnected()
-    local f = io.open(USB_GADGET, "r")
-    if not f then return false end
+local function readLine(path)
+    local f = io.open(path, "r")
+    if not f then return nil end
     local v = f:read("*l")
     f:close()
-    return v == "1"
+    return v
+end
+
+local function dirNames(dir)
+    local names = {}
+    local ok, iter, state = pcall(lfs.dir, dir)
+    if ok then
+        for name in iter, state do
+            if name:sub(1, 1) ~= "." then table.insert(names, name) end
+        end
+    end
+    return names
+end
+
+-- Is the cable going to a computer rather than a wall charger? i.MX Kindles say so through the
+-- USB gadget; MediaTek ones (Paperwhite 5 and 6, Scribe, Colorsoft) through the charger driver,
+-- which reports a computer's port as SDP or CDP and a charger as DCP. Failing both, a gadget a
+-- host has configured can only mean a computer.
+local function computerConnected()
+    local gadget = readLine(USB_GADGET)
+    if gadget then return gadget == "1" end
+    for __, name in ipairs(dirNames(POWER_SUPPLIES)) do
+        local dir = POWER_SUPPLIES .. "/" .. name
+        local usb_type = readLine(dir .. "/usb_type") -- "SDP [CDP] DCP …" on newer kernels
+        local kind = usb_type and usb_type:match("%[(%w+)%]") or readLine(dir .. "/type")
+        if kind == "USB_SDP" or kind == "USB_CDP" or kind == "SDP" or kind == "CDP" then
+            return readLine(dir .. "/online") ~= "0"
+        end
+    end
+    for __, name in ipairs(dirNames("/sys/class/udc")) do
+        if readLine("/sys/class/udc/" .. name .. "/state") == "configured" then return true end
+    end
+    return false
 end
 
 local function activePlugin()
@@ -989,7 +1022,7 @@ function VoyagePanel:offerUsbMode()
     if self.usb_dialog or not G_reader_settings:nilOrTrue("voyage_usb_prompt") then return end
     self.usb_dialog = Dialog:new{
         title = _("Connect to Computer"),
-        text = _("Use your Kindle as a USB drive? Primer will close while it's connected and come back when you eject it."),
+        text = _("Use your Kindle for file transfer? Primer closes while it's connected and comes back when you eject or unplug it."),
         buttons = {
             { text = _("Not Now"), callback = function() self.usb_dialog = nil end },
             { text = _("Connect"), bold = true, callback = function()

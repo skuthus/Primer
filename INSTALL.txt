@@ -25,8 +25,11 @@ WHAT YOU NEED
 INSTALL
 -------
 1. Connect the Kindle to your computer with a USB cable.
-2. Copy the "koreader" and "extensions" folders from this zip onto the Kindle.
-   They merge with the folders already there; if asked, replace existing files.
+2. Copy the "koreader", "extensions" and "documents" folders from this zip onto
+   the Kindle. They merge with the folders already there; if asked, replace
+   existing files. ("documents" holds Primer.sh, which shows on the home screen
+   of a Kindle on firmware 5.16.3 or newer as "Primer", with Primer's cover, and
+   starts it. Older Kindles start it from KUAL instead and can skip that folder.)
 3. Eject the Kindle.
 4. Open KUAL and tap KOReader.
 
@@ -58,6 +61,7 @@ UNINSTALL
      koreader/fonts/primer
      koreader/screensavers/primer
      extensions/primer
+     documents/Primer.sh
 KOReader stays installed, with its own interface back.
 
 

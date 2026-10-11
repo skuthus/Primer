@@ -7,9 +7,9 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 8 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
+local SETUP_VERSION = 9 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
                         -- 5: reMarkable bottom margin; 6: reMarkable footer keeps its own space; 7: bottom margin 18;
-                        -- 8: Kindle home folder is documents
+                        -- 8: Kindle home folder is documents; 9: smaller book text on the Paperwhite 12
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -65,10 +65,20 @@ if footer then
     G_reader_settings:saveSetting("footer", current)
 end
 
--- Reading defaults: never over the reader's own.
+-- Reading defaults: never over the reader's own. The font size is the Voyage's, scaled for
+-- models that read smaller (Fonts.bookSize); a size left at the unscaled default from an earlier
+-- setup is brought down too (setup v9), a size chosen by hand is kept.
 local reading = readDefaults("reading")
+local ok_fonts, Fonts = pcall(dofile, "plugins/voyagepanel.koplugin/fonts.lua")
 if reading then
     if not (kindle_fonts and exists("/usr/java/lib/fonts/Bookerly-Regular.ttf")) then reading.cre_font = "Literata" end
+    local voyage_size = reading.copt_font_size
+    if ok_fonts and type(Fonts) == "table" and Fonts.bookSize and voyage_size then
+        reading.copt_font_size = Fonts.bookSize(voyage_size)
+        if reading.copt_font_size ~= voyage_size and G_reader_settings:readSetting("copt_font_size") == voyage_size then
+            G_reader_settings:saveSetting("copt_font_size", reading.copt_font_size)
+        end
+    end
     for k, v in pairs(reading) do
         if not G_reader_settings:has(k) then G_reader_settings:saveSetting(k, v) end
     end

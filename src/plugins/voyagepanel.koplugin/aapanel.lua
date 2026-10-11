@@ -28,17 +28,22 @@ local TAB_X = { 57, 258, 406, 592 } -- label positions on the Voyage's 1072px sc
 
 -- Kindle's 5 bold steps and 14 size steps, mapped to KOReader values. Size 4 is KOReader's
 -- 22 (the default); from there each step is about 15% larger, so each one is a visible change.
+-- The ladder is the Voyage's; Fonts.bookSize scales it for models that read smaller.
 local WEIGHTS = { 0, 0.5, 1, 1.5, 3 }
-local SIZES = { 14, 16, 19, 22, 25, 29, 33, 38, 44, 51, 59, 68, 78, 90 }
+local SIZES = {}
+for i, size in ipairs({ 14, 16, 19, 22, 25, 29, 33, 38, 44, 51, 59, 68, 78, 90 }) do
+    SIZES[i] = Fonts.bookSize(size)
+end
+local DEFAULT_SIZE = SIZES[4]
 -- Size and Bold changes wait this long after the last tap, since each one re-lays out the book.
 local APPLY_DELAY_S = 1
 local MARGINS = { { h = 15, t = 15 }, { h = 30, t = 30 }, { h = 50, t = 40 } }
 local SPACINGS = { 100, 115, 135 }
 
 local PRESETS = {
-    { name = _("Compact"), icon = "compact", size = 19, spacing = 100, h = 15, t = 15 },
-    { name = _("Standard"), icon = "standard", size = 22, spacing = 115, h = 30, t = 30 },
-    { name = _("Large"), icon = "large", size = 28, spacing = 125, h = 30, t = 30 },
+    { name = _("Compact"), icon = "compact", size = Fonts.bookSize(19), spacing = 100, h = 15, t = 15 },
+    { name = _("Standard"), icon = "standard", size = DEFAULT_SIZE, spacing = 115, h = 30, t = 30 },
+    { name = _("Large"), icon = "large", size = Fonts.bookSize(28), spacing = 125, h = 30, t = 30 },
 }
 
 local PROGRESS = {
@@ -88,7 +93,7 @@ end
 -- Move the open book's font size by `delta` of the panel's steps (used by pinch and spread).
 function AaPanel.stepFontSize(ui, delta)
     local conf = ui.document.configurable
-    local i = math.max(1, math.min(#SIZES, nearest(SIZES, conf.font_size or 22) + delta))
+    local i = math.max(1, math.min(#SIZES, nearest(SIZES, conf.font_size or DEFAULT_SIZE) + delta))
     if SIZES[i] ~= conf.font_size then setFontSize(ui, SIZES[i]) end
     Notification:notify(string.format(_("Size %d"), i))
 end
@@ -153,7 +158,7 @@ function AaPanel:current()
     local h = conf.h_page_margins and conf.h_page_margins[1] or 30
     return {
         font = self.ui.font.font_face,
-        size = conf.font_size or 22,
+        size = conf.font_size or DEFAULT_SIZE,
         weight = conf.font_base_weight or 0,
         spacing = conf.line_spacing or 115,
         h = h,
