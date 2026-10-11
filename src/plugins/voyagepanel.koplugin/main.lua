@@ -1,7 +1,8 @@
 --[[--
-Voyage quick panel: a Kindle-style quick settings panel opened by swiping down
-from the top edge (tapping the top still opens KOReader's full menus).
-Also owns Auto Brightness, driven by the Voyage's ambient light sensor.
+Primer's main plugin (named voyagepanel after the Kindle Voyage it started on; the name stays so
+settings carry over). Owns the quick settings panel opened by swiping down from the top edge
+(tapping the top still opens the reading toolbar), the library, Aa, settings and the rest, and
+Auto Brightness on devices with an ambient light sensor.
 --]]
 
 local Blitbuffer = require("ffi/blitbuffer")

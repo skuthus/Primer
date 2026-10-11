@@ -1,6 +1,6 @@
 # Primer: changes
 
-Running list of changes for Primer (formerly KO-Plus), the Kindle-style system built on KOReader. `[~]` = installed, awaiting test on the device. Implemented as user patches in `koreader/patches/` or as global defaults in `settings.reader.lua`.
+Running list of changes for Primer (formerly KO-Plus), the Kindle-style interface built on KOReader. Started on the Kindle Voyage; now also developed on the Kindle Paperwhite (12th gen) and the reMarkable Paper Pro Move. `[~]` = installed, awaiting test on the device. Implemented as user patches in `koreader/patches/` or as global defaults in `settings.reader.lua`.
 
 ## Planned
 
@@ -28,7 +28,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [~] **Kindle-style footer.** (Installed 2026-10-09 via `src/patches/2-kindle-footer.lua` + `src/defaults/footer.lua`, awaiting test.) "Page 9" on the left, "45%" on the right, nothing else. Amazon Ember (the Kindle UI font, system font) as the footer font, no progress bar, no icons/separators. Items: current page + dynamic filler + percentage. Small patch to render the page item as `Page 9` (stock shows `9 / 400`). Ember confirmed loading via debug log. User-tuned: bold, size 14, height 24. Side margins follow the book's text margins (patch, awaiting test).
 
 ### Quick panel
-- [~] **Kindle-style swipe-down panel.** (Installed 2026-10-09 as `src/plugins/voyagepanel.koplugin`; look and Airplane toggle confirmed by user 2026-10-09. Device name: Kumba (set 2026-10-09; the Kindle's registered name is "Skyler's 2nd Kindle" in reginfo, not used).) Swipe down from the top edge; tap at the top still opens KOReader's menus. Modeled on the Kindle's quick actions, minus warmth and colour style:
+- [~] **Kindle-style swipe-down panel.** (Installed 2026-10-09 as `src/plugins/voyagepanel.koplugin`; look and Airplane toggle confirmed by user 2026-10-09. Device name: set by the user in Settings, else the Kindle's registered name.) Swipe down from the top edge; tap at the top still opens KOReader's menus. Modeled on the Kindle's quick actions, minus warmth and colour style:
   - Header: device name (bold), time • date, battery %.
   - Round buttons: Airplane (flips the wireless switch directly like the Kindle: no connect attempt, network list or popups; wifid rejoins saved networks itself), Dark mode (in Bluetooth's slot, since the Voyage has none), Sync (KOReader progress sync), All Settings (full KOReader menu).
   - Brightness 0–24 slider with −/+ and value over the knob; tap or drag.

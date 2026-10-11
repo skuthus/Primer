@@ -1,73 +1,233 @@
-PRIMER: a modern UI frontend for KOReader
-==========================================
+PRIMER: INSTALL GUIDE
+=====================
 
-Primer gives KOReader a Kindle-style interface: a library home, reading toolbar,
-quick settings, Aa panel, dictionary cards, notebook, and settings.
-
-
-WHAT YOU NEED
--------------
-1. A jailbroken Kindle with KUAL (the Kindle Unified Application Launcher).
-   Primer can't do this part: the jailbreak depends on your Kindle's firmware.
-   Follow the current community guide at https://kindlemodding.org, and install
-   its hotfix so the jailbreak survives Kindle updates.
-
-2. KOReader, unless your Primer zip's name ends in "with-KOReader" (that one
-   already includes it). Get it from https://github.com/koreader/koreader/releases:
-     - koreader-kindlehf-*.zip  for firmware 5.16.3 or newer
-     - koreader-kindlepw2-*.zip for older firmware on a Paperwhite 2 or newer
-       (including the Voyage and Oasis)
-   Unzip it and copy its folders onto the Kindle, the same way as step 2 below.
-
-   Primer was made for KOReader 2026.07 or newer.
+Primer gives KOReader a Kindle-style interface: a library home, a reading
+toolbar, quick settings, an Aa panel, dictionary cards, a notebook and
+settings. It's an add-on for KOReader, the free e-book reader, so you need
+KOReader working on your device first. This guide walks through both.
 
 
-INSTALL
--------
-1. Connect the Kindle to your computer with a USB cable.
-2. Copy the "koreader", "extensions" and "documents" folders from this zip onto
-   the Kindle. They merge with the folders already there; if asked, replace
-   existing files. ("documents" holds Primer.sh, which shows on the home screen
-   of a Kindle on firmware 5.16.3 or newer as "Primer", with Primer's cover, and
-   starts it. Older Kindles start it from KUAL instead and can skip that folder.)
-3. Eject the Kindle.
-4. Open KUAL and tap KOReader.
+WHICH GUIDE IS YOURS?
+---------------------
+  Kindle, firmware 5.16.3 or newer ............ Guide A
+    (Paperwhite 2021 and later, Kindle 2022 and later, Scribe, Colorsoft)
+  Kindle, firmware older than 5.16.3 .......... Guide B
+    (Voyage, Oasis, older Paperwhites and basic Kindles)
+  reMarkable Paper Pro or Paper Pro Move ...... Guide C
+  Kobo, PocketBook or another device .......... Guide D
 
-Primer sets itself up on its first start and opens on your library. A welcome
-screen offers to start Primer whenever the Kindle turns on (you can change this
-later in Settings > Device options, or in KUAL > Primer).
+To find a Kindle's firmware: open Settings > Device Options > Device Info.
+The number after "Kindle" is the firmware version, for example 5.19.6.
 
-Dictionary: Primer uses any StarDict dictionary in koreader/data/dict/ on the
-Kindle. If your zip didn't include one, the free English Wiktionary from
-https://github.com/Vuizur/Wiktionary-Dictionaries works well: unpack it and copy
-its folder there.
+Tested on: Kindle Voyage (5.13.6), Kindle Paperwhite 12th gen (5.19.6),
+reMarkable Paper Pro Move. Primer needs KOReader 2026.07 or newer.
 
+
+WHAT'S IN THE ZIP
+-----------------
+Download Primer-<version>.zip from the Releases page:
+https://github.com/skuthus/Primer/releases
+
+Unzip it on your computer. Inside are:
+
+  koreader/      Primer itself, its fonts, sleep screens and a dictionary.
+                 Merges into KOReader's own "koreader" folder.
+  extensions/    Kindle only: the start-at-boot helper.
+  documents/     Kindle 5.16.3+ only: the "Primer" item for the home screen.
+  Primer - Install.txt   This guide.
+
+
+=============================================================================
+GUIDE A: KINDLE ON FIRMWARE 5.16.3 OR NEWER
+=============================================================================
+
+Step 1. Jailbreak the Kindle
+  Primer can't do this part, and the right method depends on your exact
+  model and firmware. Use the jailbreak wizard at
+      https://kindlemodding.org/jailbreak-wizard.html
+  and follow the guide it gives you, to the end.
+
+  Important:
+  - Do NOT update the Kindle's firmware before or during this. Amazon's
+    updates close the holes jailbreaks use, and Kindles can't go back.
+  - Keep Airplane Mode on until the guide tells you to turn Wi-Fi on.
+  - The guide may ask you to fill the Kindle's storage first. Do it. You'll
+    delete the filler files at the end.
+
+  You'll know it worked when the guide's last step says so (on most methods
+  the screen shows a "RESTARTING GUI" message and the Kindle comes back).
+
+Step 2. Install KOReader
+  On the Kindle, with Wi-Fi on:
+  1. Tap the search bar on the home screen, type   ;kpm update
+     and press Enter. Wait until you're back on the home screen.
+  2. Tap the search bar again, type   ;kpm install koreader
+     and press Enter.
+  3. After a minute, a "KOReader" item appears in your library. Open it once
+     to check KOReader starts, then exit it (menu > Exit).
+
+Step 3. Copy Primer onto the Kindle
+  1. Connect the Kindle to your computer with a USB cable. It shows up as a
+     device (not a drive) with an "Internal Storage" folder.
+       Windows: in File Explorer, under "This PC".
+       macOS:   needs an MTP app, such as OpenMTP (free).
+       Linux:   in your file manager (GNOME Files, Dolphin...).
+  2. Open "Internal Storage". You'll see folders such as "documents" and
+     "koreader".
+  3. From the unzipped Primer folder, copy "koreader", "extensions" and
+     "documents" into Internal Storage. They merge with the folders that are
+     already there. If asked, replace existing files.
+
+Step 4. Start Primer
+  1. Unplug the Kindle.
+  2. A "Primer" item appears in your library (give it a minute). Tap it.
+     The old "KOReader" item opens the same thing; you can delete it.
+  3. Primer sets itself up and opens your library. A welcome screen offers
+     to start Primer whenever the Kindle turns on. Your choice; you can
+     change it later in Settings > Device options.
+
+Go on to "Adding books" below.
+
+
+=============================================================================
+GUIDE B: KINDLE ON FIRMWARE OLDER THAN 5.16.3
+=============================================================================
+
+Step 1. Jailbreak the Kindle, and install the hotfix and KUAL
+  Use the jailbreak wizard at
+      https://kindlemodding.org/jailbreak-wizard.html
+  and follow its guide, including the "hotfix" (which keeps the jailbreak
+  through restarts) and KUAL (the Kindle Unified Application Launcher, which
+  shows up in your library and starts things like KOReader).
+  Do NOT update the Kindle's firmware along the way.
+
+Step 2. Install KOReader
+  1. Download koreader-kindlepw2-<version>.zip from
+         https://github.com/koreader/koreader/releases
+     (or, if your Primer zip's name ends in "with-KOReader", skip this:
+     KOReader is already in it).
+  2. Connect the Kindle to your computer with a USB cable. It shows up as a
+     drive named "Kindle".
+  3. Unzip the KOReader zip and copy its "koreader" and "extensions" folders
+     onto the Kindle drive.
+  4. Eject the Kindle, open KUAL from your library, and tap KOReader to check
+     it starts. Exit it again (menu > Exit).
+
+Step 3. Copy Primer onto the Kindle
+  1. Connect the Kindle again.
+  2. From the unzipped Primer folder, copy "koreader" and "extensions" onto
+     the Kindle drive. They merge with the folders already there. If asked,
+     replace existing files. (Skip "documents": that's for newer Kindles.)
+  3. Eject the Kindle.
+
+Step 4. Start Primer
+  Open KUAL and tap KOReader. Primer sets itself up and opens your library,
+  and offers to start whenever the Kindle turns on (also in KUAL > Primer,
+  and later in Settings > Device options).
+
+Go on to "Adding books" below.
+
+
+=============================================================================
+GUIDE C: REMARKABLE PAPER PRO / PAPER PRO MOVE
+=============================================================================
+
+Step 1. Install KOReader
+  KOReader runs on the reMarkable through XOVI and AppLoad, which need the
+  device in developer mode (turning that on erases the device: back up first).
+  Follow the current instructions from the reMarkable community:
+      XOVI:     https://github.com/asivery/xovi
+      AppLoad:  https://github.com/asivery/rm-appload
+  then add KOReader as an AppLoad app. Check that KOReader opens from AppLoad
+  before going on.
+
+Step 2. Copy Primer into KOReader's folder
+  KOReader's folder on the device is usually
+      /home/root/xovi/exthome/appload/koreader
+  With the reMarkable plugged in by USB (it's reachable at 10.11.99.1; the
+  root password is in Settings > General > Help > About > Copyrights and
+  licenses), from the unzipped Primer folder on your computer run:
+
+      scp -r koreader/* root@10.11.99.1:/home/root/xovi/exthome/appload/koreader/
+
+  (Skip "extensions" and "documents": they're Kindle-only.)
+
+Step 3. Start Primer
+  KOReader keeps running after you exit it in AppLoad, so restart the device
+  (or stop KOReader), then open KOReader from AppLoad. Primer sets itself up
+  and opens your library.
+  Tip: keep the reMarkable's own orientation lock on. Primer turns pages to
+  landscape by itself when you turn the device sideways (Settings > Screen and
+  brightness > Turn for landscape).
+
+
+=============================================================================
+GUIDE D: KOBO, POCKETBOOK AND OTHER DEVICES
+=============================================================================
+
+  1. Install KOReader the usual way for your device:
+         https://github.com/koreader/koreader/wiki/Installation-on-Kobo-devices
+     (other devices: the same wiki, "Installation" pages).
+  2. Find KOReader's folder on the device. On a Kobo it's ".adds/koreader"
+     (a hidden folder: turn on "show hidden files" on your computer).
+  3. From the unzipped Primer folder, copy everything INSIDE "koreader"
+     (plugins, patches, fonts, screensavers, data) into KOReader's folder,
+     merging and replacing. Skip "extensions" and "documents".
+  4. Eject, and start KOReader.
+
+  Primer hasn't been tuned on these devices yet. Kindle-only features
+  (start at boot, the USB prompt, Kindle sleep screens) don't appear.
+
+
+=============================================================================
+ADDING BOOKS
+=============================================================================
+  - Use EPUB where you can (MOBI, PDF, FB2, CBZ and TXT open too).
+  - Kindle: put books in the "documents" folder. Primer lists every book in
+    it, including sub-folders.
+  - Kindle AZW3 and KFX files (books bought from Amazon, or sent as AZW3 by
+    Calibre) don't open in Primer: KOReader can't render them. Convert them
+    to EPUB, for example with Calibre, if they aren't DRM-protected.
+  - Primer shows titles and authors from Calibre if you send books with it;
+    otherwise from file names like "Title - Author.epub".
+
+DICTIONARY
+  Long-press a word to look it up. The release zip includes the English
+  Wiktionary (from https://github.com/Vuizur/Wiktionary-Dictionaries,
+  CC BY-SA). Any StarDict dictionary works: put its folder in
+  koreader/data/dict/.
+
+
+=============================================================================
+UPDATING, UNINSTALLING, TROUBLESHOOTING
+=============================================================================
 
 UPDATE
-------
-Copy the folders from the new zip over the old ones, as when installing. Your
-settings, books and notes are kept.
-
+  Copy the folders from the new zip over the old ones, the same way as when
+  installing. Your settings, books, highlights and notes are kept.
 
 UNINSTALL
----------
-1. In Primer: Settings > Device options > Start Primer at boot: off.
-2. Connect the Kindle and delete:
-     koreader/plugins/voyagepanel.koplugin
-     koreader/patches/2-kindle-footer.lua
-     koreader/patches/2-kindle-messages.lua
-     koreader/patches/2-primer-setup.lua
-     koreader/patches/2-primer-ui.lua
-     koreader/fonts/primer
-     koreader/screensavers/primer
-     extensions/primer
-     documents/Primer.sh
-KOReader stays installed, with its own interface back.
+  1. In Primer: Settings > Device options > Start Primer at boot: off.
+  2. Connect the device and delete:
+       koreader/plugins/voyagepanel.koplugin
+       koreader/patches/2-kindle-footer.lua
+       koreader/patches/2-kindle-messages.lua
+       koreader/patches/2-primer-setup.lua
+       koreader/patches/2-primer-ui.lua
+       koreader/fonts/primer
+       koreader/screensavers/primer
+       extensions/primer          (Kindle)
+       documents/Primer.sh        (Kindle 5.16.3+)
+  KOReader stays installed, with its own interface back.
 
-
-ON OTHER DEVICES
-----------------
-Primer runs on other KOReader devices too (Kobo, PocketBook…): copy the
-"koreader" folder's contents into KOReader's folder on the device and skip the
-"extensions" folder (it's Kindle-only). Layouts are tuned for the Kindle Voyage
-and may need adjusting elsewhere.
+TROUBLESHOOTING
+  - "Primer" doesn't show on the Kindle home screen: wait a minute, then
+    restart the Kindle (hold the power button, choose Restart).
+  - Primer starts at boot and you want the Kindle's own home screen instead,
+    just once: create an empty file named NO_KOREADER in the Kindle's main
+    folder (next to "documents"), then restart. Delete it to go back.
+  - The Kindle screen seems stuck after exiting Primer: hold the power button
+    about 10 seconds to restart, and update Primer (older versions had this
+    problem on firmware 5.16.3+).
+  - Something else: KOReader writes a log to koreader/crash.log on the device.
+    Report problems at https://github.com/skuthus/Primer/issues with that log.
