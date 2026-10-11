@@ -5,7 +5,8 @@ Draws the wordmark "primer" (Inter Bold) over a swoosh in the spirit of Amazon's
 where Amazon's arrow points from a to z, Primer's curve ends in a folded page corner: a page
 being turned. Black on white, for e-ink.
 
-Writes design/primer-logo.png (the Kindle cover, 938x1432, like a scriptlet's own) and
+Writes design/primer-wordmark.png (the logo alone, for the README), design/primer-logo.png
+(the Kindle cover, 938x1432, like a scriptlet's own) and
 src/scriptlets/Primer.sh, the KPM scriptlet that shows on a jailbroken Kindle's home screen
 as "Primer" with that cover and starts KOReader. Run from anywhere: python3 tools/logo.py
 """
@@ -63,7 +64,15 @@ def cover():
     d.rectangle((0, 0, W-1, H-1), outline=0, width=6)
     return img
 
+def wordmark():
+    """The logo cropped to its ink with a margin, on white (so it reads on GitHub's dark theme too)."""
+    img = draw_logo((1400, 700), 220, 0)
+    box = Image.eval(img, lambda v: 255 - v).getbbox()
+    pad = 60
+    return img.crop((box[0] - pad, box[1] - pad, box[2] + pad, box[3] + pad))
+
 if __name__ == "__main__":
+    wordmark().save(os.path.join(ROOT, "design/primer-wordmark.png"), optimize=True)
     cov = cover()
     cov.save(os.path.join(ROOT, "design/primer-logo.png"), optimize=True)
     buf = io.BytesIO(); cov.save(buf, "PNG", optimize=True)
@@ -81,4 +90,4 @@ if __name__ == "__main__":
 """
     with open(os.path.join(ROOT, "src/scriptlets/Primer.sh"), "w") as f:
         f.write(script)
-    print("wrote design/primer-logo.png and src/scriptlets/Primer.sh", len(icon)//1024, "KB icon")
+    print("wrote design/primer-wordmark.png, design/primer-logo.png and src/scriptlets/Primer.sh", len(icon)//1024, "KB icon")

@@ -1,3 +1,5 @@
+<p align="center"><img src="design/primer-wordmark.png" alt="Primer" width="320"></p>
+
 # Primer
 
 A modern UI frontend for [KOReader](https://github.com/koreader/koreader): a curated, Kindle-inspired interface (library, reading toolbar, quick panel, Aa, dictionary, notes, settings) over KOReader's engine. Developed on a Kindle Voyage, with the goal of running on any KOReader-compatible device.
@@ -25,7 +27,7 @@ Target: Kindle Voyage, firmware 5.13.6, jailbroken, KOReader v2026.07.1 (`kindle
 | `tools/lint/` | Static checks (syntax, unknown globals, `_` shadowing). There's no KOReader for macOS, so these run before every deploy |
 | `tools/deploy.sh` | Lint, then copy everything onto a USB-mounted Voyage |
 | `tools/deploy-mtp.sh` | Lint, then copy everything onto a Kindle that connects over MTP (2024 Paperwhite, Scribe, Colorsoft), with gio |
-| `tools/logo.py` | Draw Primer's logo (the wordmark over a swoosh that ends in a turned page corner) and write the launcher scriptlet |
+| `tools/logo.py` | Draw Primer's logo (the wordmark over a swoosh that ends in a turned page corner): `design/primer-wordmark.png` for this README, `design/primer-logo.png` for the Kindle cover, and the launcher scriptlet |
 | `design/` | Reference screenshots and icon previews |
 
 ## Install (users)
