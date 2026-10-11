@@ -43,6 +43,12 @@ function QuickPanel:init()
     self.ui = self.plugin.ui
     self.powerd = Device:getPowerDevice()
     self.fl_lo, self.fl_hi = QuickPanel.frontlightRange()
+    -- Shown as the Kindle's 24 steps where the light has a finer range (the reMarkable's runs
+    -- to 2047); the Kindle's own range is used as is.
+    self.fl_steps = math.min(self.fl_hi - self.fl_lo, 24)
+    -- Those finer lights look dim until well up their range (on the reMarkable, step 10 of an even
+    -- scale), so their steps follow a curve: step 5 is about the old step 10.
+    self.fl_curve = (self.fl_hi - self.fl_lo > 24) and 0.56 or 1
     self.has_auto = self.plugin:hasLightSensor()
     self.text_cache = {}
 
@@ -175,9 +181,19 @@ function QuickPanel:icon(name, w, h, invert)
     return IconWidget:new{ file = self.icon_dir .. "/" .. name .. ".svg", width = w, height = h, invert = invert }
 end
 
+function QuickPanel:stepOf(level)
+    local frac = math.min(math.max((level - self.fl_lo) / math.max(self.fl_hi - self.fl_lo, 1), 0), 1)
+    return round(frac ^ (1 / self.fl_curve) * self.fl_steps)
+end
+
+function QuickPanel:levelOf(step)
+    step = math.min(math.max(step, 0), self.fl_steps)
+    return self.fl_lo + round((step / math.max(self.fl_steps, 1)) ^ self.fl_curve * (self.fl_hi - self.fl_lo))
+end
+
 function QuickPanel:knobX()
     local level = math.min(math.max(self.powerd:frontlightIntensity(), self.fl_lo), self.fl_hi)
-    local frac = (level - self.fl_lo) / math.max(self.fl_hi - self.fl_lo, 1)
+    local frac = self:stepOf(level) / math.max(self.fl_steps, 1)
     return round(self.track_x0 + frac * (self.track_x1 - self.track_x0)), level
 end
 
@@ -265,7 +281,7 @@ function QuickPanel:paintSlider(bb, x, y)
     bb:paintCircle(x + kx, cy, self.knob_r, WHITE)
     bb:paintCircle(x + kx, cy, self.knob_r, BLACK, self.btn_border)
 
-    local value = self:text(tostring(level - self.fl_lo), self.face_small)
+    local value = self:text(tostring(self:stepOf(level)), self.face_small)
     value:paintTo(bb, x + kx - round(value:getSize().w / 2), y + self.value_y)
 end
 
@@ -293,7 +309,7 @@ end
 
 function QuickPanel:levelAt(pos_x)
     local frac = (pos_x - self.track_x0) / math.max(self.track_x1 - self.track_x0, 1)
-    return self.fl_lo + round(math.min(math.max(frac, 0), 1) * (self.fl_hi - self.fl_lo))
+    return self:levelOf(round(math.min(math.max(frac, 0), 1) * self.fl_steps))
 end
 
 function QuickPanel:onTap(__, ges)
@@ -311,9 +327,9 @@ function QuickPanel:onTap(__, ges)
         self.plugin:setAuto(not self.plugin.auto)
         self:refresh()
     elseif inside(pos, self.minus_hit) then
-        self:setLevel(self.powerd:frontlightIntensity() - 1)
+        self:setLevel(self:levelOf(self:stepOf(self.powerd:frontlightIntensity()) - 1))
     elseif inside(pos, self.plus_hit) then
-        self:setLevel(self.powerd:frontlightIntensity() + 1)
+        self:setLevel(self:levelOf(self:stepOf(self.powerd:frontlightIntensity()) + 1))
     elseif inside(pos, self.slider_hit) then
         self:setLevel(self:levelAt(pos.x))
     end
