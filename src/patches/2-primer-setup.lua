@@ -7,8 +7,9 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 7 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
-                        -- 5: reMarkable bottom margin; 6: reMarkable footer keeps its own space; 7: bottom margin 18
+local SETUP_VERSION = 8 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
+                        -- 5: reMarkable bottom margin; 6: reMarkable footer keeps its own space; 7: bottom margin 18;
+                        -- 8: Kindle home folder is documents
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -70,6 +71,15 @@ if reading then
     if not (kindle_fonts and exists("/usr/java/lib/fonts/Bookerly-Regular.ttf")) then reading.cre_font = "Literata" end
     for k, v in pairs(reading) do
         if not G_reader_settings:has(k) then G_reader_settings:saveSetting(k, v) end
+    end
+end
+
+-- Kindle: KOReader's home is the whole user partition (/mnt/us), so its file browser and Primer's
+-- library would list sleep screens, cover thumbnails and version.txt. Books live in documents.
+if Device:isKindle() and not G_reader_settings:has("home_dir") then
+    local documents = (Device.home_dir or "/mnt/us") .. "/documents"
+    if lfs.attributes(documents, "mode") == "directory" then
+        G_reader_settings:saveSetting("home_dir", documents)
     end
 end
 

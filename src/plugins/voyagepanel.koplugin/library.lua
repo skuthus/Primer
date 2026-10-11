@@ -83,12 +83,27 @@ local function loadCalibre(device_root)
     return by_path
 end
 
--- Kindle housekeeping files that aren't books: clippings, crash reports, Amazon dictionaries.
+-- Kindle housekeeping files that aren't books: clippings, crash reports, Amazon dictionaries,
+-- the firmware's version.txt, jailbreak markers and scriptlets. Images (sleep screens, cover
+-- thumbnails) open in KOReader but don't belong in a library either.
+local IMAGE_EXTENSIONS = { gif = true, jpg = true, jpeg = true, png = true, webp = true, svg = true, bmp = true }
 local function isClutter(name)
+    local ext = name:match("%.([^.]+)$")
     return name == "My Clippings.txt"
+        or name == "version.txt"
+        or name == "JAILBROKEN.txt"
+        or (ext ~= nil and (IMAGE_EXTENSIONS[ext:lower()] or ext:lower() == "sh"))
         or name:find("_crash_", 1, true) ~= nil
         or (name:find("Dictionary", 1, true) ~= nil and name:match("_B0%w+%.azw$") ~= nil)
 end
+
+-- Folders that never hold books: the Kindle's own (system, screensavers, fonts, audio) and
+-- KOReader's, in case the home folder is the device root rather than documents.
+local SKIP_DIRS = {
+    system = true, screensavers = true, fonts = true, koreader = true, extensions = true,
+    kmc = true, libkh = true, audible = true, voice = true, ["cycle-dir"] = true,
+    ["amazon-cover-bug"] = true,
+}
 
 -- Calibre-style file names: "Title_ Subtitle - Author.epub"
 local function fromFilename(name)
@@ -141,6 +156,10 @@ end
 function Library:scan()
     local start = time.now()
     local home = G_reader_settings:readSetting("home_dir") or require("apps/filemanager/filemanagerutil").getDefaultDir()
+    -- KOReader's default home on a Kindle is the whole user partition; books live in documents.
+    if Device:isKindle() and not G_reader_settings:has("home_dir") and lfs.attributes(home .. "/documents", "mode") == "directory" then
+        home = home .. "/documents"
+    end
     local calibre = loadCalibre(home:match("^(.*)/[^/]+$") or home)
 
     local opened = {}
@@ -157,7 +176,7 @@ function Library:scan()
                 local path = dir .. "/" .. name
                 local attr = lfs.attributes(path)
                 if attr and attr.mode == "directory" then
-                    walk(path)
+                    if not SKIP_DIRS[name] then walk(path) end
                 elseif attr and attr.mode == "file" and not isClutter(name) and DocumentRegistry:hasProvider(path) then
                     local meta = calibre[path]
                     local title, author = fromFilename(name)
