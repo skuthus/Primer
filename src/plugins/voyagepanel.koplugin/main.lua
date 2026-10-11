@@ -634,6 +634,10 @@ function VoyagePanel:init()
     if not G_reader_settings:isTrue("primer_welcomed") then
         UIManager:scheduleIn(1, function() self:showWelcome() end)
     end
+    if not VoyagePanel._autostart_checked then
+        VoyagePanel._autostart_checked = true
+        UIManager:scheduleIn(2, function() self:refreshAutostart() end)
+    end
 end
 
 -- Start at boot (Kindle): the upstart job installed by the KUAL extension's script.
@@ -651,6 +655,26 @@ end
 function VoyagePanel:setAutostart(on)
     os.execute(string.format("/bin/sh %s %s quiet", AUTOSTART_SCRIPT, on and "enable" or "disable"))
     return self:isAutostartOn() == on
+end
+
+-- The installed boot job is a copy; when Primer's own copy changes (an update), reinstall it so
+-- the fix reaches the device without the reader having to toggle the setting.
+local AUTOSTART_SOURCE = "/mnt/us/extensions/primer/koreader-autostart.conf"
+local function readAll(path)
+    local f = io.open(path, "r")
+    if not f then return nil end
+    local data = f:read("*a")
+    f:close()
+    return data
+end
+
+function VoyagePanel:refreshAutostart()
+    if not (self:canAutostart() and self:isAutostartOn()) then return end
+    local source = readAll(AUTOSTART_SOURCE)
+    if source and source ~= readAll(AUTOSTART_JOB) then
+        logger.info("Primer: updating the start-at-boot job")
+        self:setAutostart(true)
+    end
 end
 
 -- KOReader release Primer was built and tested against; older ones may lack what it hooks.

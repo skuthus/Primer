@@ -65,6 +65,11 @@ elif reachable; then
 	log "relaunching Primer"
 	cp "$LOG" /mnt/us/voyage-usb-handoff.log 2>/dev/null
 	cd /
+	# Same choice as the boot job: on firmware 5.16.3+ (KPM present) restarting the framework on
+	# exit leaves the Kindle without its home screen, so run over it like KPM's launcher does.
+	if [ -d /var/local/kmc ]; then
+		exec /bin/sh "$KOREADER" --asap >/dev/null 2>&1
+	fi
 	exec /bin/sh "$KOREADER" --framework_stop >/dev/null 2>&1
 else
 	log "Primer not reachable, giving up"
