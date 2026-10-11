@@ -76,13 +76,18 @@ function PageFlip:layout()
     self.line = math.max(1, round(2 * P))
     self.thick = math.max(2, round(4 * P))
 
+    -- Taller screens than the photo's (e.g. the reMarkable): the page thumbnails take the extra
+    -- height and everything from "Back to page" down moves to the bottom. Zero on the Voyage.
+    local ex = math.max(0, self.H - round(1732 * P))
+    self.extra = ex
+
     -- Thumbnails keep the page's proportions; the centre one is ~790x1045 on the photo.
-    self.thumb_h = round(1045 * P)
+    self.thumb_h = round(1045 * P) + ex
     self.thumb_w = round(self.thumb_h * W / self.H)
     self.gap = round(47 * P)
     self.thumb_y = round(405 * P)
     self.center_x = round((W - self.thumb_w) / 2)
-    self.carousel = Geom:new{ x = 0, y = round(370 * P), w = W, h = round(1112 * P) }
+    self.carousel = Geom:new{ x = 0, y = round(370 * P), w = W, h = round(1112 * P) + ex }
 
     -- Toolbar icons (centres on the photo, minus its 88px left bezel)
     self.tool_cy = round(180 * P)
@@ -95,17 +100,17 @@ function PageFlip:layout()
     self.chevron_hit = Geom:new{ x = round(W * 0.35), y = 0, w = round(W * 0.3), h = round(115 * P) }
 
     -- Bottom
-    self.back_btn = Geom:new{ x = round(67 * P), y = round(1360 * P), w = round(292 * P), h = round(82 * P) }
-    self.chapter_cy = round(1540 * P)
-    self.prev_hit = Geom:new{ x = 0, y = round(1490 * P), w = round(190 * P), h = round(95 * P) }
-    self.next_hit = Geom:new{ x = W - round(190 * P), y = round(1490 * P), w = round(190 * P), h = round(95 * P) }
-    self.grid_hit = Geom:new{ x = 0, y = round(1590 * P), w = round(160 * P), h = round(100 * P) }
+    self.back_btn = Geom:new{ x = round(67 * P), y = round(1360 * P) + ex, w = round(292 * P), h = round(82 * P) }
+    self.chapter_cy = round(1540 * P) + ex
+    self.prev_hit = Geom:new{ x = 0, y = round(1490 * P) + ex, w = round(190 * P), h = round(95 * P) }
+    self.next_hit = Geom:new{ x = W - round(190 * P), y = round(1490 * P) + ex, w = round(190 * P), h = round(95 * P) }
+    self.grid_hit = Geom:new{ x = 0, y = round(1590 * P) + ex, w = round(160 * P), h = round(100 * P) }
     self.track_x0, self.track_x1 = round(182 * P), round(1097 * P)
-    self.track_cy = round(1640 * P)
+    self.track_cy = round(1640 * P) + ex
     self.knob_r = round(30 * P)
     self.track_hit = Geom:new{ x = self.track_x0 - self.knob_r * 2, y = self.track_cy - round(70 * P),
         w = self.track_x1 - self.track_x0 + self.knob_r * 4, h = round(130 * P) }
-    self.bottom_area = Geom:new{ x = 0, y = round(1488 * P), w = W, h = self.H - round(1488 * P) }
+    self.bottom_area = Geom:new{ x = 0, y = round(1488 * P) + ex, w = W, h = self.H - round(1488 * P) - ex }
 end
 
 -- Thumbnails -----------------------------------------------------------------------
@@ -253,13 +258,13 @@ function PageFlip:paintBottom(bb, x, y)
     local BLACK, WHITE = Blitbuffer.COLOR_BLACK, Blitbuffer.COLOR_WHITE
     local area = self.bottom_area
     bb:paintRect(x + area.x, y + area.y, area.w, area.h, WHITE)
-    bb:paintRect(x, y + round(1485 * P), W, self.thick, BLACK)
+    bb:paintRect(x, y + round(1485 * P) + self.extra, W, self.thick, BLACK)
 
     local chapter = self.ui.toc:getTocTitleByPage(self.page) or ""
     local chapter_w = self:text(chapter, self.face_chapter, W - round(420 * P))
     chapter_w:paintTo(bb, x + round((W - chapter_w:getSize().w) / 2), y + self.chapter_cy - round(chapter_w:getSize().h / 2))
-    self:icon("chapter-prev", round(44 * P), x + round(92 * P), y + round(1535 * P), bb)
-    self:icon("chapter-next", round(44 * P), x + W - round(90 * P), y + round(1535 * P), bb)
+    self:icon("chapter-prev", round(44 * P), x + round(92 * P), y + round(1535 * P) + self.extra, bb)
+    self:icon("chapter-next", round(44 * P), x + W - round(90 * P), y + round(1535 * P) + self.extra, bb)
     self:icon("grid-small", round(44 * P), x + round(92 * P), y + self.track_cy, bb)
 
     -- Track: thick up to the knob, thin after; a dot marks where you were.
@@ -273,7 +278,7 @@ function PageFlip:paintBottom(bb, x, y)
     bb:paintCircle(kx, ty, self.knob_r, WHITE)
     bb:paintCircle(kx, ty, self.knob_r, BLACK, math.max(2, round(3 * P)))
     local label = self:text(self:pageLabel(self.page), self.face_label)
-    label:paintTo(bb, kx - round(label:getSize().w / 2), y + round(1595 * P) - round(label:getSize().h / 2))
+    label:paintTo(bb, kx - round(label:getSize().w / 2), y + round(1595 * P) + self.extra - round(label:getSize().h / 2))
 end
 
 -- Navigation -----------------------------------------------------------------------
