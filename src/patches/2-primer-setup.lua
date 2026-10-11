@@ -7,7 +7,8 @@
 --   * KOReader's quickstart guide skipped (Primer opens on its library instead).
 -- The values live in plugins/voyagepanel.koplugin/defaults/.
 
-local SETUP_VERSION = 4 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast
+local SETUP_VERSION = 7 -- 2: sleep after 10 minutes, like a Kindle; 3: reMarkable reading defaults; 4: reMarkable contrast;
+                        -- 5: reMarkable bottom margin; 6: reMarkable footer keeps its own space; 7: bottom margin 18
 
 if (G_reader_settings:readSetting("primer_setup_version") or 0) >= SETUP_VERSION then return end
 
@@ -88,6 +89,18 @@ if Device:isRemarkable() then
     end
     if G_reader_settings:readSetting("copt_font_base_weight", 0) == 0 then
         G_reader_settings:saveSetting("copt_font_base_weight", 0.5)
+    end
+    -- A little more room above the footer than the Kindle's 12: 18 (unless the margin was changed;
+    -- 24 was this setup's own earlier value).
+    local b_margin = G_reader_settings:readSetting("copt_b_page_margin", 12)
+    if b_margin == 12 or b_margin == 24 then
+        G_reader_settings:saveSetting("copt_b_page_margin", 18)
+    end
+    -- The footer gets its own space under the text ("reclaim height" lets text run under it).
+    local footer_settings = G_reader_settings:readSetting("footer")
+    if footer_settings and footer_settings.reclaim_height then
+        footer_settings.reclaim_height = false
+        G_reader_settings:saveSetting("footer", footer_settings)
     end
 end
 

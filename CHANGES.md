@@ -8,7 +8,7 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
 - [x] **reMarkable Paper Pro Move support** (2026-10-11, confirmed by user; reMarkable only, nothing changes on the Kindle):
   - `tools/deploy-remarkable.sh`: lint, then copy Primer into KOReader over SSH (USB networking, host `remarkable`), backing up KOReader's settings once as `settings.reader.lua.pre-primer`.
   - Older KOReader (2026.03): light-sensor and frontlight checks guarded (fixed a quick panel crash).
-  - Books' own fonts stay off: a book carrying its own "embedded fonts on" is switched to the chosen font as it opens.
+  - Books don't keep their own layout (confirmed by user): as a book's settings load, its saved layout (copt_*, font, hyphenation, style tweaks) is dropped so it follows the defaults; the Aa panel saves to the defaults, like a Kindle. Replaces the embedded-fonts-only fix. Position, highlights, notes and orientation kept.
   - Setup v3: no hyphenation and publisher font families ignored, filled in where not already chosen.
   - Higher contrast book text (setup v4, confirmed by user): Contrast 1.45 (font gamma 25) and font weight +½ (Bold 2), where not already changed; the screen's texture washes out thin text.
   - Top-right corner left to the system (confirmed by user): presses, drags and swipes starting there are ignored, so the system's brightness swipe no longer opens KOReader's image viewer (its press landed on a page image); quick taps still work.
@@ -16,6 +16,8 @@ Running list of changes for Primer (formerly KO-Plus), the Kindle-style system b
   - Page flip fills tall screens (confirmed by user): page thumbnails take the extra height and the chapter row and scrubber sit at the bottom (laid out from a Kindle photo, it used to stop two-thirds down). No change on the Voyage.
   - Aa panel sized to its contents (confirmed by user): the sheet was always the bottom 60% of the screen, leaving an empty half-sheet on tall screens; it's now as tall as its contents (unchanged on the Voyage).
   - Turn for landscape (confirmed by user; needs the reMarkable's own orientation lock on, or the system rotates KOReader's window too): Primer reads the accelerometer (lis2dw12, unused by KOReader) while a book is open; turned sideways it goes to landscape with two pages side by side, upright again to one page. Holds ~0.8 s before switching, ignores the device lying flat, waits while a Primer screen is open. Toggle in Settings > Screen and brightness.
+  - Bottom margin 18 (setup v5/v7, confirmed by user): a little more room above the footer than the Kindle's 12 (briefly 24 while the footer overlap was being tracked down).
+  - Footer keeps its own space (setup v6, confirmed by user): "reclaim height" (carried over from before Primer) let text run under the footer; turned off.
   - On the device: old per-book layouts from before Primer cleared from 9 books (backups `metadata.*.lua.pre-primer`); 14 stale KOReader processes (AppLoad keeps them running after Exit) stopped.
 - [x] **Embedded fonts off by default.** (Set by user 2026-10-09, captured in `src/defaults/reading.lua`.) Books' bundled fonts never override the chosen font. (Aa tab: Embedded Fonts → off; global default `copt_embedded_fonts = 0`.)
 - [~] **Ignore publisher font families by default.** (Installed 2026-10-09, awaiting test; menu hiding still to do.) Style tweak `font_family_all_inherit` on globally, so every paragraph uses the chosen font. Hide the option from menus once it's a default.

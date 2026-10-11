@@ -305,6 +305,33 @@ do
     end
 end
 
+-- reMarkable: books don't keep their own layout. KOReader saves every layout setting into a book
+-- whenever it closes, so books opened before (or before a defaults change) kept stale values.
+-- In Primer the Aa panel saves to the defaults for all books, like a Kindle, so as a book's
+-- settings load, its layout values are dropped and it follows the defaults. Reading position,
+-- highlights, notes and orientation are kept.
+do
+    local DocSettings = require("docsettings")
+    if not DocSettings._voyage_layout_hooked and Device:isRemarkable() then
+        DocSettings._voyage_layout_hooked = true
+        local KEEP = { copt_rotation_mode = true, copt_visible_pages = true }
+        local DROP = { font_face = true, font_family_fonts = true, hyphenation = true, style_tweaks = true }
+        local orig_open = DocSettings.open
+        function DocSettings:open(doc_path)
+            local settings = orig_open(self, doc_path)
+            local data = settings and settings.data
+            if type(data) == "table" then
+                for key in pairs(data) do
+                    if type(key) == "string" and ((key:find("^copt_") and not KEEP[key]) or key:find("^hyph_") or DROP[key]) then
+                        data[key] = nil
+                    end
+                end
+            end
+            return settings
+        end
+    end
+end
+
 -- Pinch and spread step through the Aa panel's font sizes instead of by pinch distance.
 do
     local ReaderFont = require("apps/reader/modules/readerfont")
@@ -1027,20 +1054,6 @@ end
 
 -- Kindle-style refresh: flash-free (REAGL) page turns with no forced flash every N pages
 -- (full_refresh_count = 0), and one clean full refresh when a new chapter starts.
--- reMarkable: a book's own fonts never override the chosen font (Primer has no switch for them).
--- Books opened there before Primer may carry their own "embedded fonts on": turn that off as
--- they open, unless embedded fonts were deliberately made the default for all books.
-function VoyagePanel:onReaderReady()
-    if not Device:isRemarkable() then return end
-    local doc = self.ui.document
-    local conf = doc and self.ui.rolling and doc.configurable
-    if conf and conf.embedded_fonts == 1 and G_reader_settings:readSetting("copt_embedded_fonts", 0) == 0 then
-        conf.embedded_fonts = 0
-        doc:setEmbeddedFonts(0)
-        self.ui:handleEvent(Event:new("UpdatePos"))
-    end
-end
-
 function VoyagePanel:onPageUpdate(pageno)
     if pageno and self.ui.toc and G_reader_settings:nilOrTrue("voyage_chapter_flash")
             and self.ui.toc:isChapterStart(pageno) then
